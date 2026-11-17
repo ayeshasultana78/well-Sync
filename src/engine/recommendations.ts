@@ -58,7 +58,7 @@ export function getTechniqueCard(state: UserState, ladderLevel: LadderLevel): Te
     default:
       if (ladderLevel === 'STRETCH') {
         return {
-          bctId: 'BCT 1.3',
+          bctId: 'BCT 1.5',
           bctName: 'Review Behaviour Goal(s)',
           taxonomyRef: 'Michie et al. (2013) BCTTv1, Category 1: Goals and Planning',
           suggestion:

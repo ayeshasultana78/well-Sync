@@ -66,12 +66,15 @@ export interface EngineDayResult {
   ladderLevel: LadderLevel;
   ladderTargets: LadderTargets;
   currentLadderTarget: number;
+  isSuccessDay: boolean;
   isTargetAttained: boolean;
   baseline: number;
   isColdStart: boolean;
+  isLearningBaseline: boolean;
+  learningMessage?: string;
   evaluation: DayEvaluation;
   consecutiveBelowPar: number;
-  consecutiveAtPar: number;
+  consecutiveSuccessDays: number;
   consecutiveLadderSuccesses: number;
   activeDays: number;
   returnCount: number;

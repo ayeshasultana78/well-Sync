@@ -10,14 +10,16 @@ export interface EngineConfig {
   baselineWindowDays: number;
   /** Minimum valid at-par or non-lapse days required to compute baseline (default 14). Below this, use user goal */
   minValidDaysForBaseline: number;
-  /** Threshold below which a day is classified as below-par (default 0.60 = 60% of baseline) */
+  /** Minimum valid days required before SLIPPING or LAPSED can be triggered (default 7); early period shows 'learning your baseline' */
+  minDaysForLapseDetection: number;
+  /** Threshold below which a day is classified as below-par on Target or Stretch rungs (default 0.60 = 60% of baseline) */
   belowParThresholdRatio: number;
-  /** Consecutive below-par days required to enter LAPSED state (default 3) */
+  /** Consecutive below-par/below-rung days required to enter LAPSED state (default 3) */
   lapseConsecutiveDays: number;
   /** 7-day rolling mean ratio below which state is SLIPPING if not lapsed (default 0.80 = 80% of baseline) */
   slippingMeanRatio: number;
-  /** Consecutive at-par days required to complete RECOVERING and return to ON_TRACK (default 3) */
-  recoveryConsecutiveAtParDays: number;
+  /** Consecutive success days required to complete RECOVERING and return to ON_TRACK (default 3) */
+  recoveryConsecutiveSuccessDays: number;
   /** Ladder minimum rung multiplier relative to baseline (default 0.50 = 50%) */
   ladderMinimumRatio: number;
   /** Ladder target rung multiplier relative to user goal (default 1.00 = 100%) */
@@ -31,10 +33,11 @@ export interface EngineConfig {
 export const DEFAULT_ENGINE_CONFIG: EngineConfig = {
   baselineWindowDays: 28,
   minValidDaysForBaseline: 14,
+  minDaysForLapseDetection: 7,
   belowParThresholdRatio: 0.60,
   lapseConsecutiveDays: 3,
   slippingMeanRatio: 0.80,
-  recoveryConsecutiveAtParDays: 3,
+  recoveryConsecutiveSuccessDays: 3,
   ladderMinimumRatio: 0.50,
   ladderTargetRatio: 1.00,
   ladderStretchRatio: 1.10,

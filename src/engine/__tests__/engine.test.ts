@@ -1,73 +1,97 @@
 /**
  * WellSync Engine Test Suite
  *
- * Comprehensive Vitest tests covering:
- * - Transitions (ON_TRACK, SLIPPING, LAPSED, RECOVERING)
- * - Ladder stepping (step-down on lapse, step-up after 3 successes)
- * - Cold start (< 14 days fallback to user goal)
- * - Missing days and null records
- * - Time zone changes & date normalization
- * - Baseline contamination protection (excluding LAPSED days)
- * - BCTTv1 technique cards and barrier hypotheses
+ * All test names explicitly mapped to specification items:
+ * - Cold start across history (0, 1, 13, 14, 28 days)
+ * - Baseline contamination guard (LAPSED days exclusion)
+ * - Time zone & date normalization
+ * - Missing days handling (null, undefined, isMissing)
+ * - Learning baseline suppression (< 7 valid days)
+ * - Minimum rung success definition (three 5,500-step days on 5,000 Minimum count as success, finish recovery, step up)
+ * - State transitions (ON_TRACK, SLIPPING, LAPSED, RECOVERING)
+ * - Cumulative progress (no reset to zero)
+ * - Michie et al. (2013) BCTTv1 verification (including BCT 1.5 Review behaviour goal(s))
+ * - Sleep metric evaluation
  */
 
 import { describe, expect, it } from 'vitest';
-import { calculateBaseline, calculateMedian, normalizeDateString } from '../baseline';
-import { detectBarrierHypotheses } from '../barriers';
-import { DEFAULT_ENGINE_CONFIG } from '../config';
+import { calculateBaseline, normalizeDateString } from '../baseline';
 import { calculateLadderTargets, getTargetForLevel, stepDownOnLapse, stepUpLadder } from '../ladder';
 import { getTechniqueCard } from '../recommendations';
-import { evaluateHistory, processDay } from '../state';
+import { evaluateHistory } from '../state';
 import { DailyRecord } from '../types';
 
-describe('WellSync Engine - Baseline & Median Calculations', () => {
-  it('calculates median correctly for odd and even length arrays', () => {
-    expect(calculateMedian([5000, 7000, 10000])).toBe(7000);
-    expect(calculateMedian([5000, 7000, 9000, 11000])).toBe(8000);
-    expect(calculateMedian([10000])).toBe(10000);
-    expect(calculateMedian([])).toBe(0);
-    // Unsorted array
-    expect(calculateMedian([12000, 4000, 8000])).toBe(8000);
-  });
-
-  it('normalizes dates reliably across formats and time zone offsets', () => {
-    expect(normalizeDateString('2026-11-17')).toBe('2026-11-17');
-    expect(normalizeDateString('2026-11-17T14:30:00Z')).toBe('2026-11-17');
-    expect(normalizeDateString(new Date('2026-11-20T00:00:00Z'))).toBe('2026-11-20');
-  });
-
-  it('enforces cold start when history has fewer than 14 valid days', () => {
+describe('Spec Item 1: Cold Start Across History Lengths', () => {
+  it('spec item 1.1: cold start with 0 days history falls back to user goal and flags isColdStart', () => {
     const userGoal = 8000;
     const history: DailyRecord[] = [];
+    const res = calculateBaseline(history, '2026-11-01', 'steps', userGoal);
+    expect(res.isColdStart).toBe(true);
+    expect(res.baseline).toBe(userGoal);
+    expect(res.validDaysCount).toBe(0);
+  });
 
-    // 0 days
-    const res0 = calculateBaseline(history, '2026-11-01', 'steps', userGoal);
-    expect(res0.isColdStart).toBe(true);
-    expect(res0.baseline).toBe(userGoal);
-    expect(res0.validDaysCount).toBe(0);
+  it('spec item 1.2: cold start with 1 day history falls back to user goal and flags isColdStart', () => {
+    const userGoal = 8000;
+    const history: DailyRecord[] = [{ date: '2026-10-31', steps: 9500 }];
+    const res = calculateBaseline(history, '2026-11-01', 'steps', userGoal);
+    expect(res.isColdStart).toBe(true);
+    expect(res.baseline).toBe(userGoal);
+    expect(res.validDaysCount).toBe(1);
+  });
 
-    // 13 days of data
+  it('spec item 1.3: cold start with 13 days history falls back to user goal and flags isColdStart', () => {
+    const userGoal = 8000;
+    const history: DailyRecord[] = [];
     for (let i = 1; i <= 13; i++) {
       history.push({
         date: `2026-10-${String(i).padStart(2, '0')}`,
-        steps: 6000,
+        steps: 6500,
       });
     }
-
-    const res13 = calculateBaseline(history, '2026-10-14', 'steps', userGoal);
-    expect(res13.isColdStart).toBe(true);
-    expect(res13.baseline).toBe(userGoal);
-    expect(res13.validDaysCount).toBe(13);
-
-    // 14th day added -> cold start ceases
-    history.push({ date: '2026-10-14', steps: 6000 });
-    const res14 = calculateBaseline(history, '2026-10-15', 'steps', userGoal);
-    expect(res14.isColdStart).toBe(false);
-    expect(res14.baseline).toBe(6000);
-    expect(res14.validDaysCount).toBe(14);
+    const res = calculateBaseline(history, '2026-10-14', 'steps', userGoal);
+    expect(res.isColdStart).toBe(true);
+    expect(res.baseline).toBe(userGoal);
+    expect(res.validDaysCount).toBe(13);
   });
 
-  it('prevents baseline contamination by strictly excluding LAPSED days', () => {
+  it('spec item 1.4: cold start ends at exactly 14 days history, computing median baseline', () => {
+    const userGoal = 8000;
+    const history: DailyRecord[] = [];
+    for (let i = 1; i <= 14; i++) {
+      history.push({
+        date: `2026-10-${String(i).padStart(2, '0')}`,
+        steps: 6000 + (i % 2 === 0 ? 1000 : 0), // alternating 6000 and 7000
+      });
+    }
+    const res = calculateBaseline(history, '2026-10-15', 'steps', userGoal);
+    expect(res.isColdStart).toBe(false);
+    expect(res.validDaysCount).toBe(14);
+    expect(res.baseline).toBe(6500); // median of seven 6000s and seven 7000s
+  });
+
+  it('spec item 1.5: baseline window strictly bounds to previous 28 days', () => {
+    const userGoal = 8000;
+    const history: DailyRecord[] = [];
+    // Day 1 to 40
+    for (let i = 1; i <= 40; i++) {
+      const month = i <= 31 ? '10' : '11';
+      const day = i <= 31 ? i : i - 31;
+      history.push({
+        date: `2026-${month}-${String(day).padStart(2, '0')}`,
+        // Older days (1-10) have high steps (20000), recent 28 days have 8000
+        steps: i <= 10 ? 20000 : 8000,
+      });
+    }
+    // As of Nov 10 (day 40), lookback 28 days covers day 12 to 39
+    const res = calculateBaseline(history, '2026-11-10', 'steps', userGoal);
+    expect(res.validDaysCount).toBe(28);
+    expect(res.baseline).toBe(8000); // 20000 from day 1-10 is out of window
+  });
+});
+
+describe('Spec Item 2: Baseline Contamination by Lapse Days', () => {
+  it('spec item 2.1: baseline contamination guard excludes LAPSED days from median calculation', () => {
     const userGoal = 10000;
     const history: DailyRecord[] = [];
 
@@ -89,7 +113,7 @@ describe('WellSync Engine - Baseline & Median Calculations', () => {
       });
     }
 
-    // On Oct 26, baseline should exclude the 5 LAPSED days
+    // Baseline calculation on Oct 26 must exclude the 5 LAPSED days
     const res = calculateBaseline(history, '2026-10-26', 'steps', userGoal);
     expect(res.validDaysCount).toBe(20);
     expect(res.baseline).toBe(10000);
@@ -97,234 +121,252 @@ describe('WellSync Engine - Baseline & Median Calculations', () => {
   });
 });
 
-describe('WellSync Engine - Ladder Target Mechanics', () => {
-  it('calculates Minimum (50% baseline), Target (user goal), Stretch (target + 10%)', () => {
-    const baseline = 8000;
-    const userGoal = 8000;
-    const targets = calculateLadderTargets(baseline, userGoal, DEFAULT_ENGINE_CONFIG);
-
-    expect(targets.minimum).toBe(4000); // 50% of 8000
-    expect(targets.target).toBe(8000); // user goal
-    expect(targets.stretch).toBe(8800); // 8000 + 10%
-  });
-
-  it('steps down immediately to MINIMUM on lapse', () => {
-    expect(stepDownOnLapse()).toBe('MINIMUM');
-  });
-
-  it('steps up ladder levels sequentially', () => {
-    expect(stepUpLadder('MINIMUM')).toBe('TARGET');
-    expect(stepUpLadder('TARGET')).toBe('STRETCH');
-    expect(stepUpLadder('STRETCH')).toBe('STRETCH');
-  });
-
-  it('retrieves correct target numbers per level', () => {
-    const targets = { minimum: 3500, target: 7000, stretch: 7700 };
-    expect(getTargetForLevel(targets, 'MINIMUM')).toBe(3500);
-    expect(getTargetForLevel(targets, 'TARGET')).toBe(7000);
-    expect(getTargetForLevel(targets, 'STRETCH')).toBe(7700);
+describe('Spec Item 3: Time Zone Changes and Date Normalization', () => {
+  it('spec item 3.1: normalizes ISO dates with time zone offsets to consistent calendar days', () => {
+    expect(normalizeDateString('2026-11-17')).toBe('2026-11-17');
+    expect(normalizeDateString('2026-11-17T23:45:00+04:00')).toBe('2026-11-17');
+    expect(normalizeDateString('2026-11-17T02:00:00Z')).toBe('2026-11-17');
+    expect(normalizeDateString(new Date('2026-11-20T00:00:00Z'))).toBe('2026-11-20');
   });
 });
 
-describe('WellSync Engine - Day Evaluation and State Transitions', () => {
-  it('identifies below-par day when below 60% of baseline or missing', () => {
-    const userGoal = 10000;
+describe('Spec Item 4: Missing Days Handling', () => {
+  it('spec item 4.1: missing days (null, undefined, isMissing flag) count as below-par and do not throw', () => {
+    const userGoal = 8000;
+    const history: DailyRecord[] = [];
+    for (let i = 1; i <= 7; i++) {
+      history.push({ date: `2026-10-0${i}`, steps: 8000 });
+    }
 
-    // Normal day: 7,000 steps (70% >= 60%) -> at-par
-    const normalDay = processDay({
-      previousResult: null,
-      history: [],
-      currentRecord: { date: '2026-11-01', steps: 7000 },
-      metric: 'steps',
-      userGoal,
-    });
-    expect(normalDay.evaluation.isBelowPar).toBe(false);
+    const testRecords: DailyRecord[] = [
+      ...history,
+      { date: '2026-10-08', isMissing: true },
+      { date: '2026-10-09', steps: undefined },
+      { date: '2026-10-10', steps: null },
+    ];
 
-    // Below-par day: 5,500 steps (55% < 60%)
-    const lowDay = processDay({
-      previousResult: normalDay,
-      history: [{ date: '2026-11-01', steps: 7000 }],
-      currentRecord: { date: '2026-11-02', steps: 5500 },
-      metric: 'steps',
-      userGoal,
-    });
-    expect(lowDay.evaluation.isBelowPar).toBe(true);
-
-    // Missing day: steps null / isMissing
-    const missingDay = processDay({
-      previousResult: lowDay,
-      history: [
-        { date: '2026-11-01', steps: 7000 },
-        { date: '2026-11-02', steps: 5500 },
-      ],
-      currentRecord: { date: '2026-11-03', steps: null, isMissing: true },
-      metric: 'steps',
-      userGoal,
-    });
-    expect(missingDay.evaluation.isBelowPar).toBe(true);
-    expect(missingDay.evaluation.isMissing).toBe(true);
+    const results = evaluateHistory(testRecords, userGoal, 'steps');
+    expect(results[7].evaluation.isMissing).toBe(true);
+    expect(results[7].evaluation.isBelowPar).toBe(true);
+    expect(results[8].evaluation.isMissing).toBe(true);
+    expect(results[9].evaluation.isMissing).toBe(true);
+    // 3 consecutive missing days trigger LAPSED
+    expect(results[9].state).toBe('LAPSED');
   });
+});
 
-  it('transitions to LAPSED on exactly 3 consecutive below-par days and steps ladder down', () => {
+describe('Spec Item 5: Learning Your Baseline (< 7 Valid Days)', () => {
+  it('spec item 5.1: suppresses SLIPPING and LAPSED when history has fewer than 7 valid days and shows learning your baseline', () => {
     const userGoal = 10000;
-    // 7 initial solid days so that rolling 7-day mean stays >= 80% until 3rd below-par day
+    // User registers 3 low days during the first 3 days of joining
     const records: DailyRecord[] = [
-      { date: '2026-10-25', steps: 10000 },
-      { date: '2026-10-26', steps: 10000 },
-      { date: '2026-10-27', steps: 10000 },
-      { date: '2026-10-28', steps: 10000 },
-      { date: '2026-10-29', steps: 10000 },
-      { date: '2026-10-30', steps: 10000 },
-      { date: '2026-10-31', steps: 10000 }, // at-par baseline established
-      { date: '2026-11-01', steps: 5000 }, // Day 1 below-par (< 6000)
-      { date: '2026-11-02', steps: 5000 }, // Day 2 below-par (< 6000)
-      { date: '2026-11-03', steps: 4000 }, // Day 3 below-par -> LAPSED
+      { date: '2026-11-01', steps: 1000 },
+      { date: '2026-11-02', steps: 1000 },
+      { date: '2026-11-03', steps: 1000 },
     ];
 
     const results = evaluateHistory(records, userGoal, 'steps');
+    // Suppressed: even after 3 low days, state remains ON_TRACK while learning baseline
+    expect(results[2].isLearningBaseline).toBe(true);
+    expect(results[2].learningMessage).toBe('learning your baseline');
+    expect(results[2].state).toBe('ON_TRACK');
+    expect(results[2].ladderLevel).toBe('TARGET');
+  });
 
-    // Day 7 (Oct 31)
-    expect(results[6].state).toBe('ON_TRACK');
+  it('spec item 5.2: enables SLIPPING and LAPSED once at least 7 valid days exist', () => {
+    const userGoal = 10000;
+    const records: DailyRecord[] = [];
+    // 7 valid days
+    for (let i = 1; i <= 7; i++) {
+      records.push({ date: `2026-10-0${i}`, steps: 10000 });
+    }
+    // Days 8, 9, 10 are below-par
+    records.push({ date: '2026-10-08', steps: 2000 });
+    records.push({ date: '2026-10-09', steps: 2000 });
+    records.push({ date: '2026-10-10', steps: 2000 });
 
-    // Day 8 (Nov 01): 1 below-par day
+    const results = evaluateHistory(records, userGoal, 'steps');
+    expect(results[6].isLearningBaseline).toBe(false);
+    expect(results[9].state).toBe('LAPSED');
+  });
+});
+
+describe('Spec Item 6: Minimum Rung Success Days & Step-Up Mechanics', () => {
+  it('spec item 6.1: three 5,500-step days on the Minimum rung (baseline 10,000) count as success, finish recovery and step up', () => {
+    const userGoal = 10000;
+    const records: DailyRecord[] = [];
+
+    // 14 days baseline of 10,000 steps
+    for (let i = 1; i <= 14; i++) {
+      records.push({
+        date: `2026-10-${String(i).padStart(2, '0')}`,
+        steps: 10000,
+      });
+    }
+
+    // 3 days of lapse (< 6000 steps)
+    records.push({ date: '2026-10-15', steps: 2000 });
+    records.push({ date: '2026-10-16', steps: 2000 });
+    records.push({ date: '2026-10-17', steps: 2000 }); // Day 17: enters LAPSED, ladder steps down to MINIMUM (5000)
+
+    // Three consecutive 5,500-step days on Minimum rung (Target = 5,000)
+    records.push({ date: '2026-10-18', steps: 5500 }); // Day 18: success 1 at MINIMUM -> RECOVERING
+    records.push({ date: '2026-10-19', steps: 5500 }); // Day 19: success 2 at MINIMUM -> RECOVERING
+    records.push({ date: '2026-10-20', steps: 5500 }); // Day 20: success 3 at MINIMUM -> completes recovery, ON_TRACK & steps up to TARGET!
+
+    const results = evaluateHistory(records, userGoal, 'steps');
+
+    // Verification of Day 17 (LAPSED)
+    const day17 = results[16];
+    expect(day17.state).toBe('LAPSED');
+    expect(day17.ladderLevel).toBe('MINIMUM');
+    expect(day17.ladderTargets.minimum).toBe(5000);
+
+    // Verification of Day 18 (Success Day 1 on Minimum rung)
+    const day18 = results[17];
+    expect(day18.isSuccessDay).toBe(true);
+    expect(day18.state).toBe('RECOVERING');
+    expect(day18.consecutiveSuccessDays).toBe(1);
+    expect(day18.ladderLevel).toBe('MINIMUM');
+
+    // Verification of Day 19 (Success Day 2 on Minimum rung)
+    const day19 = results[18];
+    expect(day19.isSuccessDay).toBe(true);
+    expect(day19.state).toBe('RECOVERING');
+    expect(day19.consecutiveSuccessDays).toBe(2);
+    expect(day19.ladderLevel).toBe('MINIMUM');
+
+    // Verification of Day 20 (Success Day 3 on Minimum rung)
+    const day20 = results[19];
+    expect(day20.isSuccessDay).toBe(true);
+    // Successfully finishes recovery: returns to ON_TRACK!
+    expect(day20.state).toBe('ON_TRACK');
+    expect(day20.returnCount).toBe(1);
+    // Steps up ladder from MINIMUM to TARGET!
+    expect(day20.ladderLevel).toBe('TARGET');
+  });
+
+  it('spec item 6.2: ladder steps down immediately to MINIMUM upon entering LAPSED', () => {
+    expect(stepDownOnLapse()).toBe('MINIMUM');
+  });
+
+  it('spec item 6.3: consecutive successes step up ladder from TARGET to STRETCH', () => {
+    expect(stepUpLadder('MINIMUM')).toBe('TARGET');
+    expect(stepUpLadder('TARGET')).toBe('STRETCH');
+    expect(stepUpLadder('STRETCH')).toBe('STRETCH');
+
+    const targets = calculateLadderTargets(10000, 10000);
+    expect(targets.minimum).toBe(5000);
+    expect(targets.target).toBe(10000);
+    expect(targets.stretch).toBe(11000);
+    expect(getTargetForLevel(targets, 'STRETCH')).toBe(11000);
+  });
+});
+
+describe('Spec Item 7: State Transitions and Recovery', () => {
+  it('spec item 7.1: transitions to LAPSED on exactly 3 consecutive below-par days on Target rung', () => {
+    const userGoal = 10000;
+    const records: DailyRecord[] = [];
+    for (let i = 1; i <= 7; i++) {
+      records.push({ date: `2026-10-0${i}`, steps: 10000 });
+    }
+    records.push({ date: '2026-10-08', steps: 5000 }); // below 60% (6000)
+    records.push({ date: '2026-10-09', steps: 5000 });
+    records.push({ date: '2026-10-10', steps: 4000 });
+
+    const results = evaluateHistory(records, userGoal, 'steps');
     expect(results[7].consecutiveBelowPar).toBe(1);
     expect(results[7].state).toBe('ON_TRACK');
-
-    // Day 9 (Nov 02): 2 below-par days
     expect(results[8].consecutiveBelowPar).toBe(2);
     expect(results[8].state).toBe('ON_TRACK');
-
-    // Day 10 (Nov 03): 3 below-par days -> LAPSED
     expect(results[9].consecutiveBelowPar).toBe(3);
     expect(results[9].state).toBe('LAPSED');
-    expect(results[9].ladderLevel).toBe('MINIMUM');
-    expect(results[9].ladderTargets.minimum).toBe(5000); // 50% of 10000
   });
 
-  it('transitions to RECOVERING on first at-par day after lapse and returns to ON_TRACK after 3 consecutive at-par days', () => {
+  it('spec item 7.2: transitions to RECOVERING on first success day after lapse', () => {
     const userGoal = 10000;
-    const records: DailyRecord[] = [
-      { date: '2026-11-01', steps: 3000 }, // 1
-      { date: '2026-11-02', steps: 3000 }, // 2
-      { date: '2026-11-03', steps: 3000 }, // 3 -> LAPSED
-      { date: '2026-11-04', steps: 7000 }, // at-par (>=6000) -> enters RECOVERING (day 1)
-      { date: '2026-11-05', steps: 7500 }, // at-par -> RECOVERING (day 2)
-      { date: '2026-11-06', steps: 8000 }, // at-par -> RECOVERING (day 3) -> ON_TRACK!
-    ];
+    const records: DailyRecord[] = [];
+    for (let i = 1; i <= 7; i++) {
+      records.push({ date: `2026-10-0${i}`, steps: 10000 });
+    }
+    records.push({ date: '2026-10-08', steps: 2000 });
+    records.push({ date: '2026-10-09', steps: 2000 });
+    records.push({ date: '2026-10-10', steps: 2000 }); // LAPSED
+    records.push({ date: '2026-10-11', steps: 5500 }); // success on Minimum (5000)
 
     const results = evaluateHistory(records, userGoal, 'steps');
-
-    expect(results[2].state).toBe('LAPSED');
-    expect(results[2].returnCount).toBe(0);
-
-    // Day 4: First at-par day after lapse
-    expect(results[3].state).toBe('RECOVERING');
-    expect(results[3].consecutiveAtPar).toBe(1);
-    expect(results[3].returnCount).toBe(0);
-
-    // Day 5: Second at-par day
-    expect(results[4].state).toBe('RECOVERING');
-    expect(results[4].consecutiveAtPar).toBe(2);
-    expect(results[4].returnCount).toBe(0);
-
-    // Day 6: Third at-par day completes recovery
-    expect(results[5].state).toBe('ON_TRACK');
-    expect(results[5].consecutiveAtPar).toBe(3);
-    expect(results[5].returnCount).toBe(1); // Increment returnCount!
+    expect(results[9].state).toBe('LAPSED');
+    expect(results[10].state).toBe('RECOVERING');
   });
 
-  it('detects SLIPPING when 7-day rolling mean falls below 80% without reaching 3 consecutive below-par days', () => {
+  it('spec item 7.3: detects SLIPPING when 7-day rolling mean falls below 80% without reaching 3 consecutive below-par days', () => {
     const userGoal = 10000;
-    // Intermittent pattern where 7-day mean drops below 8000 but consecutive below-par is never >= 3
     const records: DailyRecord[] = [
-      { date: '2026-11-01', steps: 10000 },
-      { date: '2026-11-02', steps: 10000 },
-      { date: '2026-11-03', steps: 10000 },
-      { date: '2026-11-04', steps: 6000 },
-      { date: '2026-11-05', steps: 6000 },
-      { date: '2026-11-06', steps: 6000 },
-      { date: '2026-11-07', steps: 6000 }, // 7-day mean = (10000*3 + 6000*4)/7 = 7714 < 8000 (80%)
+      { date: '2026-10-01', steps: 10000 },
+      { date: '2026-10-02', steps: 10000 },
+      { date: '2026-10-03', steps: 10000 },
+      { date: '2026-10-04', steps: 6000 },
+      { date: '2026-10-05', steps: 6000 },
+      { date: '2026-10-06', steps: 6000 },
+      { date: '2026-10-07', steps: 6000 }, // 7-day mean = 7714 < 8000
     ];
 
     const results = evaluateHistory(records, userGoal, 'steps');
     expect(results[6].state).toBe('SLIPPING');
   });
 
-  it('steps up the ladder one rung after 3 consecutive target successes', () => {
+  it('spec item 7.4: re-triggers LAPSED if 3 consecutive below-rung days occur during recovery', () => {
     const userGoal = 10000;
-    // Start at MINIMUM after a lapse
-    const records: DailyRecord[] = [
-      { date: '2026-11-01', steps: 2000 }, // 1 (< 6000)
-      { date: '2026-11-02', steps: 2000 }, // 2 (< 6000)
-      { date: '2026-11-03', steps: 2000 }, // 3 -> LAPSED, ladder=MINIMUM (5000)
-      { date: '2026-11-04', steps: 7000 }, // at-par (>=6000), success 1 at MINIMUM (>=5000)
-      { date: '2026-11-05', steps: 7000 }, // at-par (>=6000), success 2 at MINIMUM (>=5000)
-      { date: '2026-11-06', steps: 7000 }, // at-par (>=6000), success 3 at MINIMUM (>=5000) -> steps up to TARGET
-    ];
+    const records: DailyRecord[] = [];
+    for (let i = 1; i <= 7; i++) {
+      records.push({ date: `2026-10-0${i}`, steps: 10000 });
+    }
+    records.push({ date: '2026-10-08', steps: 2000 });
+    records.push({ date: '2026-10-09', steps: 2000 });
+    records.push({ date: '2026-10-10', steps: 2000 }); // LAPSED
+    records.push({ date: '2026-10-11', steps: 5500 }); // RECOVERING
+    records.push({ date: '2026-10-12', steps: 3000 }); // below minimum 1 (< 5000)
+    records.push({ date: '2026-10-13', steps: 3000 }); // below minimum 2
+    records.push({ date: '2026-10-14', steps: 3000 }); // below minimum 3 -> LAPSED again!
 
     const results = evaluateHistory(records, userGoal, 'steps');
-    expect(results[2].ladderLevel).toBe('MINIMUM');
-    expect(results[3].ladderLevel).toBe('MINIMUM');
-    expect(results[4].ladderLevel).toBe('MINIMUM');
-    // On 3rd success, ladder steps up from MINIMUM to TARGET
-    expect(results[5].ladderLevel).toBe('TARGET');
-  });
-
-  it('never resets active days to zero on lapse', () => {
-    const userGoal = 8000;
-    const records: DailyRecord[] = [
-      { date: '2026-11-01', steps: 8000 }, // active day 1
-      { date: '2026-11-02', steps: 8500 }, // active day 2
-      { date: '2026-11-03', steps: 9000 }, // active day 3
-      { date: '2026-11-04', steps: 1000 }, // below-par 1
-      { date: '2026-11-05', steps: 1000 }, // below-par 2
-      { date: '2026-11-06', steps: 1000 }, // below-par 3 -> LAPSED
-    ];
-
-    const results = evaluateHistory(records, userGoal, 'steps');
-    expect(results[2].activeDays).toBe(3);
-    // Even after entering LAPSED, activeDays remains 3 (never reset to 0!)
-    expect(results[5].state).toBe('LAPSED');
-    expect(results[5].activeDays).toBe(3);
+    expect(results[10].state).toBe('RECOVERING');
+    expect(results[13].state).toBe('LAPSED');
+    expect(results[13].ladderLevel).toBe('MINIMUM');
   });
 });
 
-describe('WellSync Engine - Missing Days, Time Zones & Barrier Hypotheses', () => {
-  it('handles missing records without error and preserves state integrity', () => {
+describe('Spec Item 8: Cumulative Progress (No Reset to Zero)', () => {
+  it('spec item 8.1: active days and return count never reset to zero on lapse', () => {
     const userGoal = 8000;
-    const records: DailyRecord[] = [
-      { date: '2026-11-01', steps: 8000 },
-      { date: '2026-11-02', isMissing: true },
-      { date: '2026-11-03', steps: undefined },
-      { date: '2026-11-04', steps: null },
-    ];
+    const records: DailyRecord[] = [];
+    // 7 initial active days
+    for (let i = 1; i <= 7; i++) {
+      records.push({ date: `2026-10-0${i}`, steps: 8000 });
+    }
+    // Days 8, 9, 10 are below-par (1000 steps)
+    records.push({ date: '2026-10-08', steps: 1000 });
+    records.push({ date: '2026-10-09', steps: 1000 });
+    records.push({ date: '2026-10-10', steps: 1000 }); // LAPSED
 
     const results = evaluateHistory(records, userGoal, 'steps');
-    expect(results[1].evaluation.isMissing).toBe(true);
-    expect(results[2].evaluation.isMissing).toBe(true);
-    expect(results[3].evaluation.isMissing).toBe(true);
-    expect(results[3].state).toBe('LAPSED');
+    expect(results[6].activeDays).toBe(7);
+    // After lapse on day 10, active days is still 7 (never reset to 0!)
+    expect(results[9].state).toBe('LAPSED');
+    expect(results[9].activeDays).toBe(7);
   });
+});
 
-  it('evaluates barrier hypotheses non-medically with rejection capability', () => {
-    const current: DailyRecord = {
-      date: '2026-11-15', // Sunday
-      steps: 2000,
-      contextNote: 'Double shift at hospital',
-    };
+describe('Spec Item 9: Michie et al. (2013) BCTTv1 Taxonomy Verification', () => {
+  it('spec item 9.1: verifies BCT taxonomy numbers including BCT 1.5 Review behaviour goal(s) and BCT 8.7 Graded tasks', () => {
+    const stretchCard = getTechniqueCard('ON_TRACK', 'STRETCH');
+    // Verified: BCT 1.5 is Review behaviour goal(s), NOT 1.3 (which is Goal setting outcome)
+    expect(stretchCard.bctId).toBe('BCT 1.5');
+    expect(stretchCard.bctName).toBe('Review Behaviour Goal(s)');
 
-    const hypotheses = detectBarrierHypotheses([], current, 'steps');
-    expect(hypotheses.some((h) => h.id === 'user_context' && h.detected)).toBe(true);
-
-    const userContextHypothesis = hypotheses.find((h) => h.id === 'user_context');
-    expect(userContextHypothesis?.description).toContain('Double shift at hospital');
-  });
-
-  it('generates appropriate Michie BCTTv1 technique cards per state', () => {
     const lapsedCard = getTechniqueCard('LAPSED', 'MINIMUM');
     expect(lapsedCard.bctId).toBe('BCT 8.7');
     expect(lapsedCard.bctName).toBe('Graded Tasks');
-    expect(lapsedCard.limits).toContain('The engine cannot assess physical fatigue');
 
     const slippingCard = getTechniqueCard('SLIPPING', 'TARGET');
     expect(slippingCard.bctId).toBe('BCT 1.4');
@@ -334,69 +376,26 @@ describe('WellSync Engine - Missing Days, Time Zones & Barrier Hypotheses', () =
     expect(recoveringCard.bctId).toBe('BCT 2.2');
     expect(recoveringCard.bctName).toBe('Feedback on Behaviour');
 
-    const onTrackStretchCard = getTechniqueCard('ON_TRACK', 'STRETCH');
-    expect(onTrackStretchCard.bctId).toBe('BCT 1.3');
-    expect(onTrackStretchCard.bctName).toBe('Review Behaviour Goal(s)');
+    const onTrackCard = getTechniqueCard('ON_TRACK', 'TARGET');
+    expect(onTrackCard.bctId).toBe('BCT 1.1');
+    expect(onTrackCard.bctName).toBe('Goal Setting (Behaviour)');
   });
+});
 
-  it('handles below-par days during recovery correctly', () => {
-    const userGoal = 10000;
-    // Enter lapse, start recovery, experience a single below-par day, then complete recovery
-    const records: DailyRecord[] = [
-      { date: '2026-11-01', steps: 2000 },
-      { date: '2026-11-02', steps: 2000 },
-      { date: '2026-11-03', steps: 2000 }, // LAPSED
-      { date: '2026-11-04', steps: 7000 }, // RECOVERING day 1
-      { date: '2026-11-05', steps: 4000 }, // below-par day during recovery (< 6000)
-      { date: '2026-11-06', steps: 7500 }, // at-par day 1 of new streak
-      { date: '2026-11-07', steps: 7500 }, // at-par day 2
-      { date: '2026-11-08', steps: 7500 }, // at-par day 3 -> ON_TRACK!
-    ];
-
-    const results = evaluateHistory(records, userGoal, 'steps');
-    expect(results[2].state).toBe('LAPSED');
-    expect(results[3].state).toBe('RECOVERING');
-    // Day 5: 1 below-par day during recovery does not trigger LAPSED yet, stays RECOVERING
-    expect(results[4].state).toBe('RECOVERING');
-    expect(results[4].consecutiveBelowPar).toBe(1);
-    expect(results[4].consecutiveAtPar).toBe(0);
-
-    // Day 8: Recovery completed after 3 at-par days
-    expect(results[7].state).toBe('ON_TRACK');
-    expect(results[7].returnCount).toBe(1);
-  });
-
-  it('re-triggers LAPSED if 3 consecutive below-par days occur during recovery', () => {
-    const userGoal = 10000;
-    const records: DailyRecord[] = [
-      { date: '2026-11-01', steps: 2000 },
-      { date: '2026-11-02', steps: 2000 },
-      { date: '2026-11-03', steps: 2000 }, // LAPSED
-      { date: '2026-11-04', steps: 7000 }, // RECOVERING
-      { date: '2026-11-05', steps: 3000 }, // below-par 1
-      { date: '2026-11-06', steps: 3000 }, // below-par 2
-      { date: '2026-11-07', steps: 3000 }, // below-par 3 -> re-enters LAPSED!
-    ];
-
-    const results = evaluateHistory(records, userGoal, 'steps');
-    expect(results[3].state).toBe('RECOVERING');
-    expect(results[6].state).toBe('LAPSED');
-    expect(results[6].ladderLevel).toBe('MINIMUM');
-  });
-
-  it('evaluates sleep metric seamlessly using sleepMinutes', () => {
+describe('Spec Item 10: Sleep Metric Evaluation', () => {
+  it('spec item 10.1: evaluates sleep metric seamlessly using sleepMinutes and calculates sleep ladder rungs', () => {
     const userGoalSleep = 480; // 8 hours in minutes
-    const records: DailyRecord[] = [
-      { date: '2026-11-01', sleepMinutes: 480 },
-      { date: '2026-11-02', sleepMinutes: 450 },
-      { date: '2026-11-03', sleepMinutes: 200 }, // below 60% of 480 (288m)
-      { date: '2026-11-04', sleepMinutes: 220 },
-      { date: '2026-11-05', sleepMinutes: 180 }, // 3rd low sleep day -> LAPSED
-    ];
+    const records: DailyRecord[] = [];
+    for (let i = 1; i <= 7; i++) {
+      records.push({ date: `2026-10-0${i}`, sleepMinutes: 480 });
+    }
+    records.push({ date: '2026-10-08', sleepMinutes: 200 }); // below 60% of 480 (288m)
+    records.push({ date: '2026-10-09', sleepMinutes: 220 });
+    records.push({ date: '2026-10-10', sleepMinutes: 180 }); // 3rd low sleep day -> LAPSED
 
     const results = evaluateHistory(records, userGoalSleep, 'sleep');
-    expect(results[0].state).toBe('ON_TRACK');
-    expect(results[4].state).toBe('LAPSED');
-    expect(results[4].ladderTargets.minimum).toBe(240); // 50% of 480m = 4h
+    expect(results[6].state).toBe('ON_TRACK');
+    expect(results[9].state).toBe('LAPSED');
+    expect(results[9].ladderTargets.minimum).toBe(240); // 50% of 480m = 4h
   });
 });

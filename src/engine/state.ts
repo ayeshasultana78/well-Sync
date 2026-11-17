@@ -73,7 +73,7 @@ export function processDay({
   const dateStr = normalizeDateString(currentRecord.date);
 
   // 1. Calculate Baseline for current day
-  const { baseline, isColdStart } = calculateBaseline(
+  const { baseline, isColdStart, validDaysCount } = calculateBaseline(
     history,
     dateStr,
     metric,
@@ -81,20 +81,44 @@ export function processDay({
     config
   );
 
-  // 2. Ladder Targets
-  const ladderTargets = calculateLadderTargets(baseline, userGoal, config);
-
-  // 3. Determine actual value and missing state
+  // 2. Cold-start suppression check:
+  // Suppress SLIPPING and LAPSED until at least 7 valid days exist in total
   const rawVal = metric === 'steps' ? currentRecord.steps : currentRecord.sleepMinutes;
   const isMissing = Boolean(
     currentRecord.isMissing || rawVal === null || rawVal === undefined || isNaN(rawVal)
   );
   const actualValue = isMissing ? 0 : (rawVal as number);
 
-  // 4. Day Evaluation (< 60% of baseline or missing = below-par)
+  const totalRecordedValidDays = validDaysCount + (!isMissing && actualValue >= 0 ? 1 : 0);
+  const isLearningBaseline = totalRecordedValidDays < config.minDaysForLapseDetection;
+  const learningMessage = isLearningBaseline ? 'learning your baseline' : undefined;
+
+  // 3. Ladder Targets
+  const ladderTargets = calculateLadderTargets(baseline, userGoal, config);
+
+  // 4. Active Ladder Level & Current Target
+  const prevState: UserState = previousResult?.state ?? 'ON_TRACK';
+  const prevLadderLevel: LadderLevel = previousResult?.ladderLevel ?? 'TARGET';
+
+  // Current ladder target based on active rung
+  const currentLadderTarget = getTargetForLevel(ladderTargets, prevLadderLevel);
+
+  // Definition of SUCCESS DAY: value >= current rung target
+  const isSuccessDay = !isMissing && actualValue >= currentLadderTarget;
+
+  // 5. Day Evaluation
+  // Threshold for entering SLIPPING or LAPSED when on Target/Stretch is 60% of baseline.
+  // When on Minimum rung, meeting the Minimum (isSuccessDay) is at-par / success!
   const thresholdValue = Math.round(baseline * config.belowParThresholdRatio);
   const ratio = baseline > 0 ? actualValue / baseline : 0;
-  const isBelowPar = isMissing || actualValue < thresholdValue;
+
+  // On Minimum rung: below-par only if failing to meet the Minimum target.
+  // On Target/Stretch: below-par if failing to reach 60% of baseline.
+  const isBelowPar = isMissing || (
+    prevLadderLevel === 'MINIMUM'
+      ? actualValue < ladderTargets.minimum
+      : actualValue < thresholdValue
+  );
 
   const evaluation: DayEvaluation = {
     date: dateStr,
@@ -107,12 +131,8 @@ export function processDay({
     isMissing,
   };
 
-  // 5. Initial state from previousResult or default
-  const prevState: UserState = previousResult?.state ?? 'ON_TRACK';
-  let prevLadderLevel: LadderLevel = previousResult?.ladderLevel ?? 'TARGET';
   let consecutiveBelowPar = previousResult?.consecutiveBelowPar ?? 0;
-  let consecutiveAtPar = previousResult?.consecutiveAtPar ?? 0;
-  let consecutiveLadderSuccesses = previousResult?.consecutiveLadderSuccesses ?? 0;
+  let consecutiveSuccessDays = previousResult?.consecutiveSuccessDays ?? 0;
   let activeDays = previousResult?.activeDays ?? 0;
   let returnCount = previousResult?.returnCount ?? 0;
 
@@ -121,32 +141,40 @@ export function processDay({
     activeDays += 1;
   }
 
-  // 7. Update consecutive below-par / at-par counts
+  // 7. Update independent consecutive counters:
+  // consecutiveBelowPar tracks below-par failure streaks for lapse detection
   if (isBelowPar) {
     consecutiveBelowPar += 1;
-    consecutiveAtPar = 0;
   } else {
-    consecutiveAtPar += 1;
     consecutiveBelowPar = 0;
+  }
+
+  // consecutiveSuccessDays tracks meeting current ladder target for step-up and recovery
+  if (isSuccessDay) {
+    consecutiveSuccessDays += 1;
+  } else {
+    consecutiveSuccessDays = 0;
   }
 
   // 8. State Transitions
   let nextState: UserState = prevState;
   let nextLadderLevel: LadderLevel = prevLadderLevel;
 
-  if (consecutiveBelowPar >= config.lapseConsecutiveDays) {
+  if (isLearningBaseline) {
+    // Suppress SLIPPING and LAPSED during first 7 valid days
+    nextState = 'ON_TRACK';
+  } else if (consecutiveBelowPar >= config.lapseConsecutiveDays) {
     // 3 or more consecutive below-par days = LAPSED
     nextState = 'LAPSED';
-    nextLadderLevel = stepDownOnLapse();
-    consecutiveLadderSuccesses = 0;
-  } else if (prevState === 'LAPSED' && !isBelowPar) {
-    // First at-par day after being lapsed = RECOVERING
+    nextLadderLevel = stepDownOnLapse(); // steps down to MINIMUM
+    consecutiveSuccessDays = 0;
+  } else if (prevState === 'LAPSED' && isSuccessDay) {
+    // First success day on Minimum rung after being lapsed = RECOVERING
     nextState = 'RECOVERING';
-    // Ladder stays at MINIMUM during early recovery to consolidate
   } else if (prevState === 'RECOVERING') {
-    if (!isBelowPar) {
-      if (consecutiveAtPar >= config.recoveryConsecutiveAtParDays) {
-        // 3 consecutive at-par days achieved = recovery complete, return to ON_TRACK
+    if (isSuccessDay) {
+      if (consecutiveSuccessDays >= config.recoveryConsecutiveSuccessDays) {
+        // 3 consecutive success days achieved = recovery complete, return to ON_TRACK
         nextState = 'ON_TRACK';
         returnCount += 1; // Completed recovery event
       } else {
@@ -157,7 +185,7 @@ export function processDay({
       if (consecutiveBelowPar >= config.lapseConsecutiveDays) {
         nextState = 'LAPSED';
         nextLadderLevel = stepDownOnLapse();
-        consecutiveLadderSuccesses = 0;
+        consecutiveSuccessDays = 0;
       } else {
         nextState = 'RECOVERING';
       }
@@ -174,25 +202,16 @@ export function processDay({
     }
   }
 
-  // 9. Evaluate Ladder Target Attainment & Step-up
-  const currentLadderTarget = getTargetForLevel(ladderTargets, nextLadderLevel);
-  const isTargetAttained = !isMissing && actualValue >= currentLadderTarget;
-
-  if (isTargetAttained) {
-    consecutiveLadderSuccesses += 1;
-    // Step up one rung after 3 consecutive successes
-    if (consecutiveLadderSuccesses >= config.ladderStepUpSuccesses) {
-      const stepped = stepUpLadder(nextLadderLevel);
-      if (stepped !== nextLadderLevel) {
-        nextLadderLevel = stepped;
-        consecutiveLadderSuccesses = 0;
-      }
+  // 9. Ladder Step-up: Step up one rung after 3 consecutive success days
+  if (consecutiveSuccessDays >= config.ladderStepUpSuccesses) {
+    const stepped = stepUpLadder(nextLadderLevel);
+    if (stepped !== nextLadderLevel) {
+      nextLadderLevel = stepped;
+      consecutiveSuccessDays = 0;
     }
-  } else {
-    consecutiveLadderSuccesses = 0;
   }
 
-  // 10. Barrier hypotheses & recommendations
+  // 11. Barrier hypotheses & recommendations
   const barrierHypotheses = detectBarrierHypotheses(history, currentRecord, metric);
   const techniqueCard = getTechniqueCard(nextState, nextLadderLevel);
 
@@ -203,13 +222,16 @@ export function processDay({
     ladderLevel: nextLadderLevel,
     ladderTargets,
     currentLadderTarget,
-    isTargetAttained,
+    isSuccessDay,
+    isTargetAttained: isSuccessDay,
     baseline,
     isColdStart,
+    isLearningBaseline,
+    learningMessage,
     evaluation,
     consecutiveBelowPar,
-    consecutiveAtPar,
-    consecutiveLadderSuccesses,
+    consecutiveSuccessDays,
+    consecutiveLadderSuccesses: consecutiveSuccessDays,
     activeDays,
     returnCount,
     barrierHypotheses,

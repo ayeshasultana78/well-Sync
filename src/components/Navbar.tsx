@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity, ShieldCheck, Settings, Info } from 'lucide-react';
 import { UserState } from '../engine/types';
+import { Language, t } from '../i18n/translations';
 
 export type ScreenTab = 'today' | 'recovery' | 'history' | 'evidence' | 'settings' | 'about';
 
@@ -10,7 +11,7 @@ interface NavbarProps {
   currentState: UserState;
   textSize: 'standard' | 'large' | 'xl';
   onChangeTextSize: (size: 'standard' | 'large' | 'xl') => void;
-  language: 'en' | 'ar';
+  language: Language;
   onToggleLanguage: () => void;
 }
 
@@ -30,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Top Banner: Arabic Translation Notice when Arabic is selected */}
       {language === 'ar' && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-center text-xs font-medium text-amber-800">
-          ملاحظة: هذه ترجمة أولية غير معتمدة ولم تخضع بعد لمراجعة متحدث أصلي باللغة العربية (Unreviewed translation - pending native speaker review)
+          {t('nav.unreviewed_banner', language)}
         </div>
       )}
 
@@ -41,21 +42,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => onSelectTab('today')}
               className="flex items-center gap-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg p-1 text-left"
-              aria-label="WellSync Home"
+              aria-label={t('nav.brand', language)}
             >
               <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-xs">
                 <Activity className="w-5 h-5" />
               </div>
               <div>
                 <span className="font-bold text-lg tracking-tight text-slate-900 block leading-tight">WellSync</span>
-                <span className="text-[10px] text-slate-500 font-medium block leading-none">Sustainable Habits</span>
+                <span className="text-[10px] text-slate-500 font-medium block leading-none">{t('nav.tagline', language)}</span>
               </div>
             </button>
 
             {/* Guest Mode Indicator Badge */}
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
               <ShieldCheck className="w-3 h-3 text-emerald-600" />
-              Guest Mode • Local Only
+              {t('nav.guest', language)} • {t('nav.guest_sub', language)}
             </span>
           </div>
 
@@ -69,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              Today
+              {t('nav.today', language)}
             </button>
 
             <button
@@ -80,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              Recovery
+              {t('nav.recovery', language)}
               {isLapsedOrSlipping && (
                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white animate-pulse" />
               )}
@@ -94,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              History
+              {t('nav.history', language)}
             </button>
 
             <button
@@ -105,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              Evidence
+              {t('nav.evidence', language)}
             </button>
 
             <button
@@ -115,10 +116,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-emerald-50 text-emerald-700 font-semibold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
-              aria-label="Settings"
+              aria-label={t('nav.settings', language)}
             >
               <Settings className="w-4 h-4 inline-block sm:mr-1" />
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden sm:inline">{t('nav.settings', language)}</span>
             </button>
 
             <button
@@ -128,17 +129,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-emerald-50 text-emerald-700 font-semibold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
-              aria-label="About"
+              aria-label={t('nav.about', language)}
             >
               <Info className="w-4 h-4 inline-block sm:mr-1" />
-              <span className="hidden sm:inline">About</span>
+              <span className="hidden sm:inline">{t('nav.about', language)}</span>
             </button>
           </nav>
 
           {/* Accessibility & Language Controls */}
           <div className="flex items-center gap-2">
             {/* Font Size Selector */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200">
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200" aria-label={t('nav.text_size', language)}>
               <button
                 onClick={() => onChangeTextSize('standard')}
                 className={`px-2 py-0.5 text-xs font-medium rounded ${textSize === 'standard' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
@@ -166,6 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onToggleLanguage}
               className="px-2.5 py-1 rounded-md text-xs font-semibold border border-slate-300 hover:bg-slate-50 text-slate-700 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+              aria-label={t('nav.switch_lang', language)}
             >
               {language === 'en' ? 'العربية' : 'English'}
             </button>

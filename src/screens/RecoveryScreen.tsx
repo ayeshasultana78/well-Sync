@@ -7,11 +7,13 @@ import {
   HeartHandshake,
 } from 'lucide-react';
 import { BehaviorMetric, EngineDayResult, UserEngineProfile } from '../engine/types';
+import { Language, t } from '../i18n/translations';
 
 interface RecoveryScreenProps {
   profile: UserEngineProfile;
   latestResult: EngineDayResult | null;
   metric: BehaviorMetric;
+  language: Language;
   onCommitMicroAction: (commitmentText: string) => void;
   onNavigateToToday: () => void;
 }
@@ -20,6 +22,7 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
   profile,
   latestResult,
   metric,
+  language,
   onCommitMicroAction,
   onNavigateToToday,
 }) => {
@@ -31,14 +34,24 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
   const baseline = latestResult?.baseline ?? (metric === 'steps' ? profile.userGoalSteps : profile.userGoalSleepMinutes);
   const minimumTarget = latestResult?.ladderTargets.minimum ?? Math.round(baseline * 0.5);
 
-  const defaultStepActions = [
+  const defaultStepActions = language === 'ar' ? [
+    'المشي الخفيف لمدة 10 دقائق بعد الوجبة الرئيسية مباشرة',
+    'المشي دورة واحدة حول الحي قبل بدء فترة الراحة المسائية',
+    'ركن السيارة على بعد 500 متر أو صعود الدرج مرتين اليوم',
+    'المشي في المكان داخل المنزل لمدة 5 دقائق أثناء المكالمات الهاتفية',
+  ] : [
     'Take a 10-minute walk right after my main meal',
     'Walk around the block once before starting evening relaxation',
     'Park 500 meters further away or take the stairs twice today',
     'Do a 5-minute indoor movement pacing session during phone calls',
   ];
 
-  const defaultSleepActions = [
+  const defaultSleepActions = language === 'ar' ? [
+    'ترك الشاشات والهواتف قبل 30 دقيقة من موعد النوم المحدد',
+    'بدء روتين استرخاء هادئ في إضاءة خافتة لمدة 15 دقيقة',
+    'تعتيم إضاءة الغرفة وتفعيل وضع "عدم الإزعاج" على الهاتف في الـ 10 مساءً',
+    'الحفاظ على غرفة النوم باردة ومظلمة لتحقيق نوم مستقر',
+  ] : [
     'Put screens away 30 minutes before intended bedtime',
     'Establish a calm 15-minute dim-light wind-down routine',
     'Dim overhead room lights and set phone to Do Not Disturb at 10 PM',
@@ -78,17 +91,17 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-50 text-cyan-800 border border-cyan-200">
-                Gentle Recovery Protocol
+                {language === 'ar' ? 'بروتوكول التعافي التكيفي' : 'Gentle Recovery Protocol'}
               </span>
               <span className="text-xs text-slate-500 font-medium">BCT 8.7 Graded Tasks &amp; BCT 1.4 Action Planning</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Life Happens. Step Down, Don't Quit.
+              {language === 'ar' ? 'ظروف الحياة تتغير. تدرج للأسفل ولا تستسلم.' : 'Life Happens. Step Down, Don\'t Quit.'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-              Disruptions, sickness, shift changes, and travel are normal parts of life. WellSync never resets your progress
-              to zero. Instead, your target steps down to a low-friction <strong>Minimum Rung</strong> (50% of your baseline)
-              so you maintain habit continuity without burnout.
+              {language === 'ar'
+                ? 'التحديات، والمرض، وتغير المناوبات، والسفر هي أجزاء طبيعية من الحياة. نظام WellSync لا يعيد تقدمك للصفر مطلقاً. بدلاً من ذلك، يتدرج الهدف تلقائياً إلى المستوى الأدنى (50% من خط الأساس) لتستمر دون احتراق أو إحباط.'
+                : 'Disruptions, sickness, shift changes, and travel are normal parts of life. WellSync never resets your progress to zero. Instead, your target steps down to a low-friction Minimum Rung (50% of your baseline) so you maintain habit continuity without burnout.'}
             </p>
           </div>
         </div>
@@ -97,36 +110,36 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 relative">
             <span className="absolute -top-2.5 left-3 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-emerald-700 text-white tracking-wider">
-              Active Focus
+              {language === 'ar' ? 'التركيز النشط' : 'Active Focus'}
             </span>
-            <div className="text-xs font-semibold text-emerald-900">Minimum Rung (50%)</div>
+            <div className="text-xs font-semibold text-emerald-900">{t('ladder.minimum', language)}</div>
             <div className="text-2xl font-bold text-emerald-950 mt-1">
-              {minimumTarget.toLocaleString()} <span className="text-xs font-normal text-emerald-700">{metric === 'steps' ? 'steps' : 'mins'}</span>
+              {minimumTarget.toLocaleString()} <span className="text-xs font-normal text-emerald-700">{metric === 'steps' ? t('today.steps_unit', language) : t('today.sleep_unit', language)}</span>
             </div>
             <p className="text-[11px] text-emerald-800 mt-1">
-              Low-friction target designed to preserve your habit identity today.
+              {language === 'ar' ? 'هدف ميسر مصمم للحفاظ على هويتك السلوكية اليوم.' : 'Low-friction target designed to preserve your habit identity today.'}
             </p>
           </div>
 
           <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 opacity-75">
-            <div className="text-xs font-semibold text-slate-700">Target Rung (100%)</div>
+            <div className="text-xs font-semibold text-slate-700">{t('ladder.target', language)}</div>
             <div className="text-xl font-bold text-slate-900 mt-1">
               {(latestResult?.ladderTargets.target ?? baseline).toLocaleString()}{' '}
-              <span className="text-xs font-normal text-slate-500">{metric === 'steps' ? 'steps' : 'mins'}</span>
+              <span className="text-xs font-normal text-slate-500">{metric === 'steps' ? t('today.steps_unit', language) : t('today.sleep_unit', language)}</span>
             </div>
             <p className="text-[11px] text-slate-500 mt-1">
-              Steps back up here automatically after 3 consecutive successful days.
+              {language === 'ar' ? 'يعود الهدف تلقائياً إلى هذا المستوى بعد 3 أيام إنجاز متتالية.' : 'Steps back up here automatically after 3 consecutive successful days.'}
             </p>
           </div>
 
           <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 opacity-75">
-            <div className="text-xs font-semibold text-slate-700">Stretch Rung (110%)</div>
+            <div className="text-xs font-semibold text-slate-700">{t('ladder.stretch', language)}</div>
             <div className="text-xl font-bold text-slate-900 mt-1">
               {(latestResult?.ladderTargets.stretch ?? Math.round(baseline * 1.1)).toLocaleString()}{' '}
-              <span className="text-xs font-normal text-slate-500">{metric === 'steps' ? 'steps' : 'mins'}</span>
+              <span className="text-xs font-normal text-slate-500">{metric === 'steps' ? t('today.steps_unit', language) : t('today.sleep_unit', language)}</span>
             </div>
             <p className="text-[11px] text-slate-500 mt-1">
-              Optional challenge for days when you have extra surplus energy.
+              {language === 'ar' ? 'تحدٍ اختياري للأيام التي تشعر فيها بنشاط وطاقة إضافية.' : 'Optional challenge for days when you have extra surplus energy.'}
             </p>
           </div>
         </div>
@@ -138,13 +151,12 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <HelpCircle className="w-4 h-4 text-slate-500" />
-              Lifestyle Barrier Hypotheses
+              {t('recovery.hypotheses_title', language)}
             </h2>
-            <span className="text-[11px] text-slate-500 font-medium">Non-medical • Fully Rejectable</span>
+            <span className="text-[11px] text-slate-500 font-medium">{language === 'ar' ? 'غير سريرية • قابلة للرفض بالكامل' : 'Non-medical • Fully Rejectable'}</span>
           </div>
           <p className="text-xs text-slate-600 mt-0.5">
-            The engine examines activity and calendar timing to hypothesize potential disruption patterns. You may reject any
-            hypothesis with zero penalty.
+            {t('recovery.hypotheses_desc', language)}
           </p>
         </div>
 
@@ -177,7 +189,9 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
                     onClick={() => handleRejectHypothesis(hypothesis.id)}
                     className="text-[11px] font-semibold text-slate-500 hover:text-rose-600 px-1.5 py-0.5 rounded-md hover:bg-slate-100 transition-colors"
                   >
-                    {isRejected ? 'Undo Rejection' : 'Reject'}
+                    {isRejected
+                      ? (language === 'ar' ? 'إلغاء الرفض' : 'Undo Rejection')
+                      : (language === 'ar' ? 'رفض الفرضية' : 'Reject')}
                   </button>
                 </div>
 
@@ -188,7 +202,7 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
                 {isRejected && (
                   <span className="inline-flex items-center gap-1 mt-2 text-[10px] text-slate-500 font-medium">
                     <XCircle className="w-3 h-3 text-slate-400" />
-                    Rejected by you — disregarded by engine
+                    {language === 'ar' ? 'تم الرفض من قبلك — تم استبعادها من المحرك' : 'Rejected by you — disregarded by engine'}
                   </span>
                 )}
               </div>
@@ -202,10 +216,12 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
         <div>
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <HeartHandshake className="w-4 h-4 text-emerald-600" />
-            Pick Today's Micro-Commitment
+            {t('recovery.micro_action_title', language)}
           </h2>
           <p className="text-xs text-slate-600 mt-0.5">
-            Select one tiny, specific action to accomplish your Minimum target today. Action planning prevents procrastination.
+            {language === 'ar'
+              ? 'حدد إجراءً صغيراً ومحدداً لإنجاز هدفك الأدنى اليوم. التخطيط المسبق للإجراءات يمنع التسويف.'
+              : 'Select one tiny, specific action to accomplish your Minimum target today. Action planning prevents procrastination.'}
           </p>
         </div>
 
@@ -237,11 +253,11 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Or write your own custom micro-action:
+              {language === 'ar' ? 'أو اكتب خطوتك المصغرة الخاصة:' : 'Or write your own custom micro-action:'}
             </label>
             <input
               type="text"
-              placeholder="e.g., Walk to the grocery store instead of driving"
+              placeholder={language === 'ar' ? 'مثال: المشي إلى البقالة بدلاً من قيادة السيارة' : 'e.g., Walk to the grocery store instead of driving'}
               value={customCommitment}
               onChange={(e) => {
                 setCustomCommitment(e.target.value);
@@ -257,13 +273,13 @@ export const RecoveryScreen: React.FC<RecoveryScreenProps> = ({
               disabled={!selectedCommitment && !customCommitment}
               className="inline-flex items-center gap-2 py-2.5 px-5 rounded-xl font-semibold text-xs sm:text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Commit to this Action
+              {t('recovery.commit_btn', language)}
               <ArrowRight className="w-4 h-4" />
             </button>
 
             {committedSuccess && (
               <span className="text-xs font-bold text-emerald-700 animate-fade-in">
-                ✓ Commitment saved to today's plan!
+                ✓ {language === 'ar' ? 'تم حفظ الالتزام في خطة اليوم!' : 'Commitment saved to today\'s plan!'}
               </span>
             )}
           </div>

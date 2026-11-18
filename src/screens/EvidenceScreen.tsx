@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart3, AlertCircle, FileCheck2, ShieldCheck, CheckCircle2, TrendingUp, Filter } from 'lucide-react';
 import evidenceData from '../data/evidence_data.json';
+import { Language, t } from '../i18n/translations';
 
 interface Provenance {
   source_files: string[];
@@ -72,7 +73,11 @@ interface FullEvidencePayload {
   sensitivity?: SensitivityItem[];
 }
 
-export const EvidenceScreen: React.FC = () => {
+interface EvidenceScreenProps {
+  language?: Language;
+}
+
+export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ language = 'en' }) => {
   const evidence = evidenceData as unknown as FullEvidencePayload;
   const isGenerated = Boolean(evidence && evidence.provenance && evidence.provenance.total_source_rows > 0);
 
@@ -97,14 +102,15 @@ export const EvidenceScreen: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
-                Empirical Evaluation
+                {t('evidence.empirical', language)}
               </span>
               <span className="text-xs text-slate-500 font-medium">LifeSnaps Replay Simulation</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Replay Evidence &amp; Policy Benchmark</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{t('evidence.title', language)}</h1>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-              Evaluating how deterministic rule-based policies treat longitudinal recorded behavior: Policy A (Fixed Target + Reset-to-Zero Streak)
-              versus Policy B (WellSync Adaptive Personal Ladder with Step-Down).
+              {language === 'ar'
+                ? 'تقييم لكيفية تعامل القواعد المحددة مع السلوك المسجل: مقارنة السياسة أ (الهدف الثابت والتصفير) بالسياسة ب (سلم WellSync التكيفي).'
+                : 'Evaluating how deterministic rule-based policies treat longitudinal recorded behavior: Policy A (Fixed Target + Reset-to-Zero Streak) versus Policy B (WellSync Adaptive Personal Ladder with Step-Down).'}
             </p>
           </div>
         </div>
@@ -114,22 +120,23 @@ export const EvidenceScreen: React.FC = () => {
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 text-xs text-slate-700">
         <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-          Mandatory Evaluation Disclaimers
+          {t('evidence.disclaimer_title', language)}
         </div>
         <p className="leading-relaxed">
-          1. <strong>Rule Replay, Not Proven Behavior Change:</strong> This retrospective replay demonstrates how algorithmic rules treat recorded wearable behavior.
-          It <strong>does not prove behavior change</strong> or clinical efficacy in individuals.
+          1. <strong>{language === 'ar' ? 'إعادة تشغيل القواعد لا تثبت تغيير السلوك:' : 'Rule Replay, Not Proven Behavior Change:'}</strong>{' '}
+          {t('evidence.disclaimer_1', language)}
         </p>
         <p className="leading-relaxed">
-          2. <strong>Demographic Scope:</strong> Participants in the LifeSnaps study belong to an open research cohort (Zenodo 7229547)
-          and <strong>are not an Abu Dhabi sample</strong>. Results must not be assumed representative of UAE or GCC populations without localized validation.
+          2. <strong>{language === 'ar' ? 'نطاق العينة الديموغرافية:' : 'Demographic Scope:'}</strong>{' '}
+          {t('evidence.disclaimer_2', language)}
         </p>
         <p className="leading-relaxed">
-          3. <strong>Data Integrity:</strong> In accordance with competition rules, zero numbers are fabricated or estimated from
-          assumed distributions. Numbers appear only when produced directly from real data files by the analysis script.
+          3. <strong>{language === 'ar' ? 'نزاهة البيانات:' : 'Data Integrity:'}</strong>{' '}
+          {t('evidence.disclaimer_3', language)}
         </p>
         <p className="leading-relaxed">
-          4. <strong>Zero Runtime AI/LLM:</strong> The entire replay and runtime engine are deterministic pure functions with zero AI/LLM calls.
+          4. <strong>{language === 'ar' ? 'صفر ذكاء اصطناعي أثناء التشغيل:' : 'Zero Runtime AI/LLM:'}</strong>{' '}
+          {t('evidence.disclaimer_4', language)}
         </p>
       </div>
 
@@ -139,15 +146,17 @@ export const EvidenceScreen: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-bold text-slate-900">Replay results not generated yet</h2>
+          <h2 className="text-lg font-bold text-slate-900">
+            {language === 'ar' ? 'لم يتم توليد نتائج المحاكاة بعد' : 'Replay results not generated yet'}
+          </h2>
           <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-            Evidence numbers will be computed and rendered here once the real LifeSnaps data files are provided in{' '}
-            <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 font-mono text-[11px]">analysis/data/</code> and the
-            analysis script is executed.
+            {language === 'ar'
+              ? 'سيتم حساب وعرض الأدلة هنا فور وضع ملفات LifeSnaps في مجلد analysis/data/ وتشغيل كود التحليل.'
+              : 'Evidence numbers will be computed and rendered here once the real LifeSnaps data files are provided in analysis/data/ and the analysis script is executed.'}
           </p>
           <div className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            Hard Rule Enforced: Zero placeholder numbers, zero assumed distributions.
+            {language === 'ar' ? 'قاعدة صارمة: صفر أرقام افتراضية أو وهمية.' : 'Hard Rule Enforced: Zero placeholder numbers, zero assumed distributions.'}
           </div>
         </div>
       ) : (
@@ -156,28 +165,38 @@ export const EvidenceScreen: React.FC = () => {
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <FileCheck2 className="w-4 h-4 text-emerald-600" />
-              Dataset Provenance &amp; Verification
+              {language === 'ar' ? 'مصدر البيانات والتحقق من النزاهة' : 'Dataset Provenance & Verification'}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-slate-600">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Source File</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                  {language === 'ar' ? 'الملف المصدر' : 'Source File'}
+                </span>
                 <strong className="text-slate-900 font-mono text-[11px] break-all">{evidence.provenance.source_files.join(', ')}</strong>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Source Rows / Cohort</span>
-                <strong className="text-slate-900">{evidence.provenance.total_source_rows.toLocaleString()} rows ({evidence.provenance.total_participants} participants)</strong>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                  {language === 'ar' ? 'عدد السجلات / العينة' : 'Source Rows / Cohort'}
+                </span>
+                <strong className="text-slate-900">
+                  {evidence.provenance.total_source_rows.toLocaleString()} {language === 'ar' ? 'سجل' : 'rows'} ({evidence.provenance.total_participants} {language === 'ar' ? 'مشارك' : 'participants'})
+                </strong>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Run Timestamp (UTC)</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                  {language === 'ar' ? 'تاريخ التشغيل (UTC)' : 'Run Timestamp (UTC)'}
+                </span>
                 <strong className="text-slate-900">{new Date(evidence.provenance.run_date_utc).toLocaleDateString()} {new Date(evidence.provenance.run_date_utc).toLocaleTimeString()}</strong>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Engine / Script Version</span>
-                <strong className="text-slate-900">v{evidence.provenance.script_version} (Deterministic Replay)</strong>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                  {language === 'ar' ? 'إصدار كود المحاكاة' : 'Engine / Script Version'}
+                </span>
+                <strong className="text-slate-900">v{evidence.provenance.script_version} ({language === 'ar' ? 'محاكاة محددة' : 'Deterministic Replay'})</strong>
               </div>
             </div>
             <p className="text-[11px] text-slate-500 mt-3 pt-3 border-t border-slate-100">
-              <strong>Source Citation:</strong> {evidence.provenance.citation}
+              <strong>{language === 'ar' ? 'التوثيق العلمي:' : 'Source Citation:'}</strong> {evidence.provenance.citation}
             </p>
           </div>
 
@@ -185,35 +204,57 @@ export const EvidenceScreen: React.FC = () => {
           {evidence.descriptive_recovery && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Descriptive Lapse &amp; Recovery Characteristics</h3>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  {language === 'ar' ? 'الخصائص الوصفية للتراجع والتعافي' : 'Descriptive Lapse & Recovery Characteristics'}
+                </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Naturalistic lapse frequencies and recovery duration observed across 71 real participants in LifeSnaps.
+                  {language === 'ar'
+                    ? 'معدلات التراجع الطبيعي ومدد التعافي المرصودة عبر 71 مشاركاً حقيقياً في بيانات LifeSnaps.'
+                    : 'Naturalistic lapse frequencies and recovery duration observed across 71 real participants in LifeSnaps.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-100 text-center">
                   <div className="text-2xl font-bold text-amber-800">{evidence.descriptive_recovery.total_lapses_detected}</div>
-                  <div className="text-[11px] font-semibold text-amber-900 mt-1">Total Lapses Detected</div>
-                  <div className="text-[10px] text-amber-700 mt-0.5">{evidence.descriptive_recovery.participants_with_lapses} / {evidence.provenance.total_participants} participants lapsed</div>
+                  <div className="text-[11px] font-semibold text-amber-900 mt-1">
+                    {language === 'ar' ? 'إجمالي التراجعات المرصودة' : 'Total Lapses Detected'}
+                  </div>
+                  <div className="text-[10px] text-amber-700 mt-0.5">
+                    {evidence.descriptive_recovery.participants_with_lapses} / {evidence.provenance.total_participants} {language === 'ar' ? 'مشارك تراجعوا' : 'participants lapsed'}
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-100 text-center">
                   <div className="text-2xl font-bold text-indigo-800">{evidence.descriptive_recovery.mean_lapses_per_participant}</div>
-                  <div className="text-[11px] font-semibold text-indigo-900 mt-1">Mean Lapses / Person</div>
-                  <div className="text-[10px] text-indigo-700 mt-0.5">Median: {evidence.descriptive_recovery.median_lapses_per_participant} lapse</div>
+                  <div className="text-[11px] font-semibold text-indigo-900 mt-1">
+                    {language === 'ar' ? 'متوسط التراجعات / شخص' : 'Mean Lapses / Person'}
+                  </div>
+                  <div className="text-[10px] text-indigo-700 mt-0.5">
+                    {language === 'ar' ? 'الوسيط:' : 'Median:'} {evidence.descriptive_recovery.median_lapses_per_participant}
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100 text-center">
-                  <div className="text-2xl font-bold text-emerald-800">{evidence.descriptive_recovery.median_recovery_days} days</div>
-                  <div className="text-[11px] font-semibold text-emerald-900 mt-1">Median Recovery Time</div>
-                  <div className="text-[10px] text-emerald-700 mt-0.5">Mean: {evidence.descriptive_recovery.mean_recovery_days} days (min {evidence.descriptive_recovery.min_recovery_days}d)</div>
+                  <div className="text-2xl font-bold text-emerald-800">
+                    {evidence.descriptive_recovery.median_recovery_days} {language === 'ar' ? 'أيام' : 'days'}
+                  </div>
+                  <div className="text-[11px] font-semibold text-emerald-900 mt-1">
+                    {language === 'ar' ? 'وسيط مدة التعافي' : 'Median Recovery Time'}
+                  </div>
+                  <div className="text-[10px] text-emerald-700 mt-0.5">
+                    {language === 'ar' ? 'المتوسط:' : 'Mean:'} {evidence.descriptive_recovery.mean_recovery_days} {language === 'ar' ? 'أيام' : 'days'}
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center">
                   <div className="text-2xl font-bold text-slate-800">{evidence.descriptive_recovery.total_recoveries_completed}</div>
-                  <div className="text-[11px] font-semibold text-slate-900 mt-1">Recoveries Completed</div>
-                  <div className="text-[10px] text-slate-600 mt-0.5">Restored to baseline target</div>
+                  <div className="text-[11px] font-semibold text-slate-900 mt-1">
+                    {language === 'ar' ? 'مرات التعافي المكتملة' : 'Recoveries Completed'}
+                  </div>
+                  <div className="text-[10px] text-slate-600 mt-0.5">
+                    {language === 'ar' ? 'تمت استعادة الهدف الأساسي' : 'Restored to baseline target'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -224,9 +265,13 @@ export const EvidenceScreen: React.FC = () => {
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Policy Comparison: Policy A vs. Policy B</h3>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                    {language === 'ar' ? 'مقارنة السياسات: السياسة أ مقابل السياسة ب' : 'Policy Comparison: Policy A vs. Policy B'}
+                  </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Rigid target with streak reset to zero (Policy A) versus WellSync adaptive personal ladder (Policy B).
+                    {language === 'ar'
+                      ? 'الهدف الثابت مع تصفير التتابع (السياسة أ) مقابل سلم WellSync التكيفي (السياسة ب).'
+                      : 'Rigid target with streak reset to zero (Policy A) versus WellSync adaptive personal ladder (Policy B).'}
                   </p>
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 self-start sm:self-auto">
@@ -239,12 +284,12 @@ export const EvidenceScreen: React.FC = () => {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 text-[10px] uppercase font-semibold text-slate-500">
-                      <th className="py-3 px-3">Policy Evaluated</th>
-                      <th className="py-3 px-3">Mean Resets to 0</th>
-                      <th className="py-3 px-3">Median Resets</th>
-                      <th className="py-3 px-3">Mean Longest Streak</th>
-                      <th className="py-3 px-3">Target Attainability %</th>
-                      <th className="py-3 px-3">Mean Days Below Baseline</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'السياسة المختبرة' : 'Policy Evaluated'}</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'متوسط مرات التصفير للصفر' : 'Mean Resets to 0'}</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'وسيط مرات التصفير' : 'Median Resets'}</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'متوسط أطول تتابع' : 'Mean Longest Streak'}</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'نسبة إمكانية التحقيق %' : 'Target Attainability %'}</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'أيام دون خط الأساس' : 'Mean Days Below Baseline'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -258,19 +303,21 @@ export const EvidenceScreen: React.FC = () => {
                             </span>
                             {isPolicyB && (
                               <span className="block text-[10px] text-emerald-700 font-normal">
-                                Progress cumulative; Mean active days: {item.mean_active_days}d; Mean returns: {item.mean_return_count}
+                                {language === 'ar'
+                                  ? `التقدم تراكمي؛ متوسط الأيام النشطة: ${item.mean_active_days}d؛ متوسط العودات: ${item.mean_return_count}`
+                                  : `Progress cumulative; Mean active days: ${item.mean_active_days}d; Mean returns: ${item.mean_return_count}`}
                               </span>
                             )}
                           </td>
                           <td className={`py-3 px-3 ${isPolicyB ? 'text-emerald-700 font-bold' : 'text-rose-600'}`}>
-                            {item.mean_resets === 0 ? '0.0 (Zero Resets)' : item.mean_resets}
+                            {item.mean_resets === 0 ? (language === 'ar' ? '0.0 (صفر تصفير)' : '0.0 (Zero Resets)') : item.mean_resets}
                           </td>
                           <td className="py-3 px-3">{item.median_resets}</td>
-                          <td className="py-3 px-3">{item.longest_streak_mean} days</td>
+                          <td className="py-3 px-3">{item.longest_streak_mean} {language === 'ar' ? 'أيام' : 'days'}</td>
                           <td className={`py-3 px-3 ${isPolicyB ? 'text-emerald-700 font-bold' : ''}`}>
                             {item.attainability_pct}%
                           </td>
-                          <td className="py-3 px-3 text-slate-500">{item.days_below_baseline_mean} days</td>
+                          <td className="py-3 px-3 text-slate-500">{item.days_below_baseline_mean} {language === 'ar' ? 'يوم' : 'days'}</td>
                         </tr>
                       );
                     })}
@@ -278,7 +325,10 @@ export const EvidenceScreen: React.FC = () => {
                 </table>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed">
-                <strong>Key Takeaway:</strong> Under Policy A with a 10,000-step target, participants experience an average of <strong>9.7 punitive streak resets</strong>, with target attainability dropping to just <strong>22.3%</strong>. Under WellSync Policy B, streak resets to zero are <strong>completely eliminated (0.0)</strong>, maintaining a 30.0% attainability rate even during behavioral dips by stepping down to the Minimum rung (50% baseline).
+                <strong>{language === 'ar' ? 'الخلاصة العلمية:' : 'Key Takeaway:'}</strong>{' '}
+                {language === 'ar'
+                  ? 'تحت السياسة أ بهدف 10,000 خطوة، يواجه المشاركون متوسط 9.7 مرات تصفير عقابي للتتابع مع هبوط نسبة التحقيق إلى 22.3% فقط. بينما يقضي نظام WellSync في السياسة ب على تصفير التتابع كلياً (0.0)، محافظاً على نسبة تحقيق 30.0% ومحفزاً الاستمرارية عبر النزول للمستوى الأدنى 50%.'
+                  : 'Under Policy A with a 10,000-step target, participants experience an average of 9.7 punitive streak resets, with target attainability dropping to just 22.3%. Under WellSync Policy B, streak resets to zero are completely eliminated (0.0), maintaining a 30.0% attainability rate even during behavioral dips by stepping down to the Minimum rung (50% baseline).'}
               </div>
             </div>
           )}
@@ -287,9 +337,13 @@ export const EvidenceScreen: React.FC = () => {
           {evidence.demographics && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Demographic Subgroup Analysis (Privacy-Masked)</h3>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  {language === 'ar' ? 'تحليل الفئات الديموغرافية (مع حجب الخصوصية)' : 'Demographic Subgroup Analysis (Privacy-Masked)'}
+                </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Subgroup disaggregation across gender and age. Cells with sample size &lt; 5 participants are strictly suppressed to prevent individual re-identification.
+                  {language === 'ar'
+                    ? 'توزيع النتائج حسب الجنس والعمر. يتم حجب الخلايا ذات العينة الأقل من 5 مشاركين كلياً لمنع كشف الهوية.'
+                    : 'Subgroup disaggregation across gender and age. Cells with sample size < 5 participants are strictly suppressed to prevent individual re-identification.'}
                 </p>
               </div>
 
@@ -297,7 +351,7 @@ export const EvidenceScreen: React.FC = () => {
                 {/* Gender */}
                 <div className="border border-slate-200 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center justify-between">
-                    <span>By Gender</span>
+                    <span>{language === 'ar' ? 'حسب الجنس' : 'By Gender'}</span>
                     <span className="text-[10px] text-slate-400 font-normal">Threshold: n &ge; 5</span>
                   </h4>
                   <div className="space-y-2">
@@ -310,14 +364,14 @@ export const EvidenceScreen: React.FC = () => {
                         {g.masked ? (
                           <div className="mt-1 text-[11px] text-amber-700 italic flex items-center gap-1">
                             <ShieldCheck className="w-3.5 h-3.5" />
-                            [Data suppressed: n &lt; 5 privacy threshold]
+                            {language === 'ar' ? '[تم حجب البيانات: عينة أقل من 5 للخصوصية]' : '[Data suppressed: n < 5 privacy threshold]'}
                           </div>
                         ) : (
                           <div className="mt-1.5 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
-                            <div>Policy B Attainability: <strong className="text-slate-900">{g.policy_b_attainability_pct}%</strong></div>
-                            <div>Policy B Returns: <strong className="text-slate-900">{g.policy_b_mean_returns}</strong></div>
-                            <div>Policy B Lapses: <strong className="text-slate-900">{g.policy_b_mean_lapses}</strong></div>
-                            <div>Policy A 10k Resets: <strong className="text-rose-600">{g.policy_a_10k_resets}</strong></div>
+                            <div>{language === 'ar' ? 'تحقيق السياسة ب:' : 'Policy B Attainability:'} <strong className="text-slate-900">{g.policy_b_attainability_pct}%</strong></div>
+                            <div>{language === 'ar' ? 'عودات السياسة ب:' : 'Policy B Returns:'} <strong className="text-slate-900">{g.policy_b_mean_returns}</strong></div>
+                            <div>{language === 'ar' ? 'تراجعات السياسة ب:' : 'Policy B Lapses:'} <strong className="text-slate-900">{g.policy_b_mean_lapses}</strong></div>
+                            <div>{language === 'ar' ? 'تصفير السياسة أ 10k:' : 'Policy A 10k Resets:'} <strong className="text-rose-600">{g.policy_a_10k_resets}</strong></div>
                           </div>
                         )}
                       </div>
@@ -328,7 +382,7 @@ export const EvidenceScreen: React.FC = () => {
                 {/* Age */}
                 <div className="border border-slate-200 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center justify-between">
-                    <span>By Age Category</span>
+                    <span>{language === 'ar' ? 'حسب الفئة العمرية' : 'By Age Category'}</span>
                     <span className="text-[10px] text-slate-400 font-normal">Threshold: n &ge; 5</span>
                   </h4>
                   <div className="space-y-2">
@@ -341,14 +395,14 @@ export const EvidenceScreen: React.FC = () => {
                         {a.masked ? (
                           <div className="mt-1 text-[11px] text-amber-700 italic flex items-center gap-1">
                             <ShieldCheck className="w-3.5 h-3.5" />
-                            [Data suppressed: n &lt; 5 privacy threshold]
+                            {language === 'ar' ? '[تم حجب البيانات: عينة أقل من 5 للخصوصية]' : '[Data suppressed: n < 5 privacy threshold]'}
                           </div>
                         ) : (
                           <div className="mt-1.5 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
-                            <div>Policy B Attainability: <strong className="text-slate-900">{a.policy_b_attainability_pct}%</strong></div>
-                            <div>Policy B Returns: <strong className="text-slate-900">{a.policy_b_mean_returns}</strong></div>
-                            <div>Policy B Lapses: <strong className="text-slate-900">{a.policy_b_mean_lapses}</strong></div>
-                            <div>Policy A 10k Resets: <strong className="text-rose-600">{a.policy_a_10k_resets}</strong></div>
+                            <div>{language === 'ar' ? 'تحقيق السياسة ب:' : 'Policy B Attainability:'} <strong className="text-slate-900">{a.policy_b_attainability_pct}%</strong></div>
+                            <div>{language === 'ar' ? 'عودات السياسة ب:' : 'Policy B Returns:'} <strong className="text-slate-900">{a.policy_b_mean_returns}</strong></div>
+                            <div>{language === 'ar' ? 'تراجعات السياسة ب:' : 'Policy B Lapses:'} <strong className="text-slate-900">{a.policy_b_mean_lapses}</strong></div>
+                            <div>{language === 'ar' ? 'تصفير السياسة أ 10k:' : 'Policy A 10k Resets:'} <strong className="text-rose-600">{a.policy_a_10k_resets}</strong></div>
                           </div>
                         )}
                       </div>
@@ -366,10 +420,12 @@ export const EvidenceScreen: React.FC = () => {
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-indigo-600" />
-                    Multi-Parameter Sensitivity Analysis (36 Configurations)
+                    {language === 'ar' ? 'تحليل الحساسية متعدد المعاملات (36 إعداداً)' : 'Multi-Parameter Sensitivity Analysis (36 Configurations)'}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Testing engine resilience across varying lapse lengths (2–5 days), thresholds (50%–70%), and baseline windows (14–42 days).
+                    {language === 'ar'
+                      ? 'اختبار متانة المحرك عبر تغيير طول التراجع (2–5 أيام)، ونسبة العتبة (50%–70%)، ونافذة الأساس (14–42 يوماً).'
+                      : 'Testing engine resilience across varying lapse lengths (2–5 days), thresholds (50%–70%), and baseline windows (14–42 days).'}
                   </p>
                 </div>
 
@@ -382,7 +438,7 @@ export const EvidenceScreen: React.FC = () => {
                     onChange={(e) => setSelectedLapseLength(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                     aria-label="Filter by lapse length"
                   >
-                    <option value="all">All Lapse Lengths</option>
+                    <option value="all">{language === 'ar' ? 'جميع مدد التراجع' : 'All Lapse Lengths'}</option>
                     <option value="2">2 Days Lapse</option>
                     <option value="3">3 Days (Default)</option>
                     <option value="4">4 Days Lapse</option>
@@ -395,7 +451,7 @@ export const EvidenceScreen: React.FC = () => {
                     onChange={(e) => setSelectedThreshold(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                     aria-label="Filter by below-par threshold"
                   >
-                    <option value="all">All Thresholds</option>
+                    <option value="all">{language === 'ar' ? 'جميع العتبات' : 'All Thresholds'}</option>
                     <option value="50">50% Threshold</option>
                     <option value="60">60% (Default)</option>
                     <option value="70">70% Threshold</option>
@@ -407,13 +463,13 @@ export const EvidenceScreen: React.FC = () => {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="sticky top-0 bg-slate-100 text-[10px] uppercase font-semibold text-slate-600 border-b border-slate-200">
                     <tr>
-                      <th className="py-2.5 px-3">Lapse Trigger</th>
-                      <th className="py-2.5 px-3">Below-Par Threshold</th>
-                      <th className="py-2.5 px-3">Baseline Window</th>
-                      <th className="py-2.5 px-3">Total Lapses</th>
-                      <th className="py-2.5 px-3">Mean Lapses/Person</th>
-                      <th className="py-2.5 px-3">Mean Recovery Time</th>
-                      <th className="py-2.5 px-3">Attainability %</th>
+                      <th className="py-2.5 px-3">{language === 'ar' ? 'معيار التراجع' : 'Lapse Trigger'}</th>
+                      <th className="py-2.5 px-3">{language === 'ar' ? 'عتبة دون المستوى' : 'Below-Par Threshold'}</th>
+                      <th className="py-2.5 px-3">{language === 'ar' ? 'نافذة خط الأساس' : 'Baseline Window'}</th>
+                      <th className="py-2.5 px-3">{language === 'ar' ? 'إجمالي التراجعات' : 'Total Lapses'}</th>
+                      <th className="py-2.5 px-3">{language === 'ar' ? 'متوسط التراجعات/شخص' : 'Mean Lapses/Person'}</th>
+                      <th className="py-2.5 px-3">{language === 'ar' ? 'متوسط مدة التعافي' : 'Mean Recovery Time'}</th>
+                      <th className="py-2.5 px-3">{language === 'ar' ? 'نسبة التحقيق %' : 'Attainability %'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -422,14 +478,14 @@ export const EvidenceScreen: React.FC = () => {
                       return (
                         <tr key={idx} className={isDefault ? 'bg-indigo-50/50 font-bold text-indigo-950' : 'hover:bg-slate-50/50'}>
                           <td className="py-2 px-3">
-                            {row.lapse_length_days} consecutive days
-                            {isDefault && <span className="ml-1 text-[10px] text-indigo-600 font-semibold">(Default)</span>}
+                            {row.lapse_length_days} {language === 'ar' ? 'أيام متتالية' : 'consecutive days'}
+                            {isDefault && <span className="ml-1 text-[10px] text-indigo-600 font-semibold">{language === 'ar' ? '(الافتراضي)' : '(Default)'}</span>}
                           </td>
-                          <td className="py-2 px-3">{row.below_par_threshold_pct}% of baseline</td>
-                          <td className="py-2 px-3">{row.baseline_window_days} days</td>
+                          <td className="py-2 px-3">{row.below_par_threshold_pct}% {language === 'ar' ? 'من الأساس' : 'of baseline'}</td>
+                          <td className="py-2 px-3">{row.baseline_window_days} {language === 'ar' ? 'يوماً' : 'days'}</td>
                           <td className="py-2 px-3">{row.total_lapses_detected}</td>
                           <td className="py-2 px-3">{row.mean_lapses_per_participant}</td>
-                          <td className="py-2 px-3">{row.mean_recovery_days ? `${row.mean_recovery_days} days` : 'N/A'}</td>
+                          <td className="py-2 px-3">{row.mean_recovery_days ? `${row.mean_recovery_days} ${language === 'ar' ? 'أيام' : 'days'}` : 'N/A'}</td>
                           <td className="py-2 px-3">{row.mean_attainability_pct}%</td>
                         </tr>
                       );
@@ -438,7 +494,9 @@ export const EvidenceScreen: React.FC = () => {
                 </table>
               </div>
               <p className="text-[11px] text-slate-500">
-                Showing {filteredSensitivity.length} of {evidence.sensitivity.length} sensitivity permutations. Across all permutations, Policy B consistently produces zero streak resets and higher continuous engagement compared to static threshold policies.
+                {language === 'ar'
+                  ? `عرض ${filteredSensitivity.length} من إجمالي ${evidence.sensitivity.length} تكويناً للحساسية. عبر جميع التكوينات، تحقق السياسة ب نسبة 0.0 تصفير للتتابع وتماسكاً أعلى مقارنة بالأهداف الثابتة.`
+                  : `Showing ${filteredSensitivity.length} of ${evidence.sensitivity.length} sensitivity permutations. Across all permutations, Policy B consistently produces zero streak resets and higher continuous engagement compared to static threshold policies.`}
               </p>
             </div>
           )}

@@ -155,6 +155,7 @@ export function App() {
             profile={appState.profile}
             latestResult={latestResult}
             metric={activeMetric}
+            language={appState.language}
             onChangeMetric={setActiveMetric}
             onSaveRecord={handleSaveRecord}
             onNavigateToRecovery={() => setCurrentTab('recovery')}
@@ -166,6 +167,7 @@ export function App() {
             profile={appState.profile}
             latestResult={latestResult}
             metric={activeMetric}
+            language={appState.language}
             onCommitMicroAction={handleCommitMicroAction}
             onNavigateToToday={() => setCurrentTab('today')}
           />
@@ -176,19 +178,21 @@ export function App() {
             profile={appState.profile}
             historyResults={evaluatedResults}
             metric={activeMetric}
+            language={appState.language}
             onChangeMetric={setActiveMetric}
             onNavigateToToday={() => setCurrentTab('today')}
             onNavigateToSettings={() => setCurrentTab('settings')}
           />
         )}
 
-        {currentTab === 'evidence' && <EvidenceScreen />}
+        {currentTab === 'evidence' && <EvidenceScreen language={appState.language} />}
 
         {currentTab === 'settings' && (
           <SettingsScreen
             profile={appState.profile}
             quietHours={appState.quietHours}
             textSize={appState.textSize}
+            language={appState.language}
             onUpdateProfile={handleUpdateProfile}
             onUpdateQuietHours={handleUpdateQuietHours}
             onChangeTextSize={handleChangeTextSize}
@@ -198,13 +202,14 @@ export function App() {
           />
         )}
 
-        {currentTab === 'about' && <AboutScreen />}
+        {currentTab === 'about' && <AboutScreen language={appState.language} />}
       </main>
 
       {/* First-time Onboarding Modal */}
       {!appState.hasCompletedOnboarding && (
         <OnboardingModal
           initialProfile={appState.profile}
+          language={appState.language}
           onComplete={handleCompleteOnboarding}
         />
       )}

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Shield, Activity, Moon, Footprints, CheckCircle2 } from 'lucide-react';
 import { UserEngineProfile } from '../engine/types';
+import { Language, t } from '../i18n/translations';
 
 interface OnboardingModalProps {
   initialProfile: UserEngineProfile;
+  language: Language;
   onComplete: (profile: UserEngineProfile) => void;
 }
 
-export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile, onComplete }) => {
+export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile, language, onComplete }) => {
   const [stepGoal, setStepGoal] = useState<number>(initialProfile.userGoalSteps || 8000);
   const [sleepHours, setSleepHours] = useState<number>(Math.floor((initialProfile.userGoalSleepMinutes || 480) / 60));
   const [sleepMinutesRemainder, setSleepMinutesRemainder] = useState<number>(
@@ -31,30 +33,44 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
             <Activity className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Welcome to WellSync</h2>
-            <p className="text-xs sm:text-sm text-slate-600">Sustaining movement and sleep habits without punitive streaks.</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">{t('onboarding.welcome', language)}</h2>
+            <p className="text-xs sm:text-sm text-slate-600">{t('onboarding.subtitle', language)}</p>
           </div>
         </div>
 
         {/* How It Works Explainer */}
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-3">
-          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">How WellSync Works</h3>
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            {language === 'ar' ? 'كيف يعمل نظام WellSync' : 'How WellSync Works'}
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span><strong>Personal Baseline:</strong> Calibrates to your rolling 28-day median. Starts from your goal while learning.</span>
+              <span>
+                <strong>{language === 'ar' ? 'خط الأساس الشخصي:' : 'Personal Baseline:'}</strong>{' '}
+                {language === 'ar' ? 'يتم احتسابه من وسيط آخر 28 يوماً، ويبدأ من هدفك أثناء التعلم.' : 'Calibrates to your rolling 28-day median. Starts from your goal while learning.'}
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span><strong>Step-Down Ladder:</strong> Missing days steps your target down to 50% instead of resetting streaks to zero.</span>
+              <span>
+                <strong>{language === 'ar' ? 'السلم التكيفي:' : 'Step-Down Ladder:'}</strong>{' '}
+                {language === 'ar' ? 'عند التراجع، يخفض الهدف إلى 50% بدلاً من تصفير أيام تقدمك.' : 'Missing days steps your target down to 50% instead of resetting streaks to zero.'}
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span><strong>Return Count:</strong> We count every successful return. You never lose your accumulated active days.</span>
+              <span>
+                <strong>{language === 'ar' ? 'مرات العودة:' : 'Return Count:'}</strong>{' '}
+                {language === 'ar' ? 'نحتفي بكل عودة ناجحة بعد تعثر. أيامك النشطة تتراكم دائماً.' : 'We count every successful return. You never lose your accumulated active days.'}
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span><strong>Total Privacy:</strong> Runs 100% in your browser. No account, no login, zero network calls.</span>
+              <span>
+                <strong>{language === 'ar' ? 'خصوصية مطلقة:' : 'Total Privacy:'}</strong>{' '}
+                {language === 'ar' ? 'يعمل 100% داخل متصفحك. بدون حسابات وبدون أي اتصالات خارجية.' : 'Runs 100% in your browser. No account, no login, zero network calls.'}
+              </span>
             </div>
           </div>
         </div>
@@ -64,7 +80,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
               <Footprints className="w-4 h-4 text-emerald-600" />
-              Daily Step Goal (steps/day)
+              {t('settings.step_goal', language)} ({t('today.steps_unit', language)})
             </label>
             <input
               type="number"
@@ -77,14 +93,16 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
               required
             />
             <p className="text-[11px] text-slate-500 mt-1">
-              Common goals: 6,000 for beginner maintenance, 8,000 for regular activity, 10,000 for high movement.
+              {language === 'ar'
+                ? 'أهداف شائعة: 6,000 خطوة للمبتدئين، 8,000 خطوة للنشاط المعتدل، 10,000 خطوة لنشاط عالٍ.'
+                : 'Common goals: 6,000 for beginner maintenance, 8,000 for regular activity, 10,000 for high movement.'}
             </p>
           </div>
 
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
               <Moon className="w-4 h-4 text-indigo-600" />
-              Daily Sleep Goal
+              {t('settings.sleep_goal', language)}
             </label>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -98,7 +116,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                     required
                   />
-                  <span className="text-xs text-slate-600 font-medium">hours</span>
+                  <span className="text-xs text-slate-600 font-medium">{t('today.sleep_hours_label', language)}</span>
                 </div>
               </div>
               <div>
@@ -113,11 +131,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                     required
                   />
-                  <span className="text-xs text-slate-600 font-medium">mins</span>
+                  <span className="text-xs text-slate-600 font-medium">{t('today.sleep_mins_label', language)}</span>
                 </div>
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Recommended adult target: 7 to 9 hours (420 - 540 minutes).</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {language === 'ar' ? 'الهدف الموصى به للبالغين: من 7 إلى 9 ساعات يومياً.' : 'Recommended adult target: 7 to 9 hours (420 - 540 minutes).'}
+            </p>
           </div>
 
           <div className="pt-2">
@@ -125,13 +145,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
               type="submit"
               className="w-full py-3 px-4 rounded-xl font-semibold text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
             >
-              Continue as Guest (All Features Unlocked)
+              {language === 'ar' ? 'المتابعة كضيف (جميع الميزات مفعلة)' : 'Continue as Guest (All Features Unlocked)'}
             </button>
           </div>
 
           <p className="text-center text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
             <Shield className="w-3.5 h-3.5 text-slate-400" />
-            Your data is never transmitted. You can export or delete it at any time.
+            {t('onboarding.no_account_note', language)}
           </p>
         </form>
       </div>

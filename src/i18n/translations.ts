@@ -31,6 +31,10 @@ export const translations: Record<string, { en: string; ar: string }> = {
   'ladder.stretch': { en: 'Stretch Rung (110%)', ar: 'المستوى الموسع (110%)' },
 
   // Today Screen
+  'today.header_desc': {
+    en: 'Monitor your personal baseline, track active targets, and log daily entries.',
+    ar: 'راقب خط الأساس الشخصي، وتتبع أهدافك النشطة، وسجل نشاطك اليومي.'
+  },
   'today.active_behavior': { en: 'Active Behavior', ar: 'السلوك النشط' },
   'today.steps': { en: 'Daily Steps', ar: 'الخطوات اليومية' },
   'today.sleep': { en: 'Sleep Duration', ar: 'مدة النوم' },
@@ -50,6 +54,14 @@ export const translations: Record<string, { en: string; ar: string }> = {
   'today.bct_reason': { en: 'Scientific Rationale', ar: 'المبرر العلمي' },
   'today.bct_limits': { en: 'Known Limitations', ar: 'الحدود والضوابط' },
   'today.recovery_cta': { en: 'Lapse Detected: Open Recovery Plan', ar: 'تم رصد تراجع: فتح خطة التعافي التكيفية' },
+  'today.date_label': { en: 'Date', ar: 'التاريخ' },
+  'today.step_count_label': { en: 'Step Count', ar: 'عدد الخطوات' },
+  'today.sleep_hours_label': { en: 'Hours', ar: 'ساعات' },
+  'today.sleep_mins_label': { en: 'Minutes', ar: 'دقائق' },
+  'today.rest_day_label': { en: 'Mark as Planned Rest / Sick Day', ar: 'تحديد كيوم راحة مخطط أو يوم مرض' },
+  'today.context_note_label': { en: 'Optional Context Note', ar: 'ملاحظة سياقية اختيارية' },
+  'today.context_note_placeholder': { en: 'e.g., travel, rainy weather, high workload', ar: 'مثال: سفر، طقس ممطر، ضغط عمل' },
+  'today.saved_success': { en: 'Entry recorded successfully!', ar: 'تم تسجيل النشاط بنجاح!' },
 
   // Recovery Flow
   'recovery.title': { en: 'Adaptive Recovery Flow', ar: 'مسار التعافي التكيفي' },
@@ -71,6 +83,8 @@ export const translations: Record<string, { en: string; ar: string }> = {
   'recovery.rejected_badge': { en: 'Rejected by You', ar: 'تم رفضها من قبلك' },
   'recovery.micro_action_title': { en: 'Select a Micro-Action Commitment', ar: 'اختر التزاماً بخطوة مصغرة' },
   'recovery.commit_btn': { en: 'Confirm Commitment & Return to Today', ar: 'تأكيد الالتزام والعودة لليوم' },
+  'recovery.consecutive_successes': { en: 'Consecutive Successes on Minimum', ar: 'أيام الإنجاز المتتالية على الهدف الأدنى' },
+  'recovery.successes_needed': { en: 'days (3 needed to restore target)', ar: 'أيام (مطلوب 3 أيام لاستعادة الهدف)' },
 
   // History Screen
   'history.title': { en: 'Behavioral History Log', ar: 'سجل السلوك التاريخي' },
@@ -85,6 +99,8 @@ export const translations: Record<string, { en: string; ar: string }> = {
   'history.col_state': { en: 'State', ar: 'الحالة' },
   'history.col_outcome': { en: 'Outcome', ar: 'النتيجة' },
   'history.no_records': { en: 'No data recorded yet. Use the check-in form on the Today screen or load the synthetic demo journey in Settings.', ar: 'لا توجد بيانات مسجلة بعد. استخدم نموذج التسجيل في شاشة اليوم أو قم بتحميل التجربة المصطنعة في الإعدادات.' },
+  'history.total_records': { en: 'Total Records', ar: 'إجمالي السجلات' },
+  'history.success_rate': { en: 'Success Rate', ar: 'نسبة الإنجاز' },
 
   // Evidence Screen
   'evidence.title': { en: 'Replay Evidence & Policy Benchmark', ar: 'أدلة إعادة المحاكاة ومقارنة السياسات' },
@@ -142,7 +158,14 @@ export const translations: Record<string, { en: string; ar: string }> = {
   'about.excluded_desc': {
     en: 'Workplace leaderboards, peer competitions, and employer/insurer reporting are deliberately excluded due to proven risks of surveillance stigma, shame-induced disengagement, and punitive discrimination.',
     ar: 'تم استبعاد لوحات المتصدرين في أماكن العمل والمنافسات بين الأقران وتقارير أرباب العمل أو شركات التأمين عمداً لما تنطوي عليه من مخاطر مثبتة تتعلق بالوصم، والمراقبة، والإحباط، والتمييز.'
-  }
+  },
+
+  // Onboarding Modal
+  'onboarding.welcome': { en: 'Welcome to WellSync', ar: 'مرحباً بك في WellSync' },
+  'onboarding.subtitle': { en: 'A scientific, non-punitive approach to sustaining healthy behaviors.', ar: 'نهج علمي وغير عقابي لاستدامة السلوكيات الصحية.' },
+  'onboarding.goal_prompt': { en: 'Set your initial daily goals', ar: 'حدد أهدافك اليومية المبدئية' },
+  'onboarding.get_started': { en: 'Get Started (Guest Mode)', ar: 'البدء (وضع الضيف)' },
+  'onboarding.no_account_note': { en: 'No accounts or passwords needed. Your data stays in this browser.', ar: 'لا حاجة لإنشاء حساب أو كلمة مرور. بياناتك تبقى في هذا المتصفح.' }
 };
 
 export function t(key: string, lang: Language): string {

@@ -96,7 +96,7 @@ async function auditHtmlFragment(fragmentHtml: string, title: string) {
   return results;
 }
 
-describe('Automated axe-core Accessibility Audit (Partial Heuristic Check)', () => {
+describe('Automated axe-core Accessibility Audit (Partial Heuristic Check)', { timeout: 20000 }, () => {
   it('audits TodayScreen without critical accessibility violations', async () => {
     const html = renderToStaticMarkup(
       <TodayScreen

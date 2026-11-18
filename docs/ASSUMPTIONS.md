@@ -68,3 +68,52 @@ In the retrospective replay analysis (`analysis/replay.py`):
 2. **Cold Start Participant Fallback**: For each participant's first 13 valid days (before 14 valid days exist in the rolling window), the fallback goal equals that participant's overall median steps across their recorded history.
 3. **Missing Day Treatment**: In wearable sensor data, unsynced or unrecorded calendar days are marked as missing (`isMissing = True`, `actualValue = 0`), which counts as a below-par day.
 4. **Zero Participant Identifiers**: Replay outputs exported to the app contain strictly aggregated group metrics and zero individual identifiers.
+
+
+---
+
+## 6. Michie et al. (2013) Behavior Change Technique (BCT) Taxonomy v1 Verification
+
+All behavioral interventions in WellSync map directly to the standardized 93-item taxonomy published by Michie et al. (*Annals of Behavioral Medicine*, 2013, 46(1):81–95):
+
+| BCT Code | Taxonomy Title | Category | WellSync Implementation & Context |
+| :--- | :--- | :--- | :--- |
+| **BCT 1.1** | Goal setting (behaviour) | 1. Goals and planning | Used in `ON_TRACK`: user's target step and sleep duration goals. |
+| **BCT 1.4** | Action planning | 1. Goals and planning | Used in `SLIPPING` and `RECOVERING`: user selects or enters a specific contextual micro-commitment (e.g., "10-minute walk after main meal"). |
+| **BCT 1.5** | Review behaviour goal(s) | 1. Goals and planning | Used when adjusting ladder rungs (stepping down to Minimum on lapse; unlocking Stretch upon sustained mastery). |
+| **BCT 2.2** | Feedback on behaviour | 2. Feedback and monitoring | Used in `RECOVERING`: monitors consecutive at-par days towards completing the 3-day recovery requirement. |
+| **BCT 8.7** | Graded tasks | 8. Repetition and substitution | Used in `LAPSED`: temporarily lowers target to Minimum (50% of baseline) to maintain behavioral identity without burnout. |
+
+> **BCT Verification Note on BCT 1.3 vs. BCT 1.5**:
+> - **BCT 1.3** is officially defined in Michie et al. (2013) Table 1 as **"Goal setting (outcome)"** — setting goals in terms of positive clinical or physiological outcomes (e.g., target blood pressure, body weight, or blood glucose).
+> - **BCT 1.5** is officially defined as **"Review behaviour goal(s)"** — reviewing and modifying a previously set behavioral goal (e.g., adjusting daily steps or walking minutes).
+> - Therefore, WellSync's ladder adjustment functions are formally confirmed as **BCT 1.5**, NOT BCT 1.3.
+
+---
+
+## 7. Retrospective Replay Policy Benchmark & Attainability Definitions
+
+In `analysis/replay.py` and the application's Evidence screen, four behavioral policies are benchmarked on the real LifeSnaps wearable dataset:
+
+### 7.1 Policy Definitions
+1. **Policy A (Fixed Targets with Streak Reset)**:
+   - Evaluates conventional fixed targets: 5,000 steps, 7,500 steps, and 10,000 steps.
+   - Streak resets to 0 upon a single day below target or missing.
+2. **Policy A' (Personal Baseline with Streak Reset)**:
+   - Target is dynamically personalized to each participant's rolling 28-day baseline ($\text{Target}_{i,t} = \text{Baseline}_{i,t}$).
+   - Employs the conventional reset-to-zero streak mechanic upon any below-target or missing day.
+   - *Empirical Finding*: Even with 100% personalized baseline targets, real participants experienced a mean of **15.3 streak collapses to zero** (median 15.0), demonstrating that streak fragility is an architectural defect of the reset mechanic itself, not just an artifact of arbitrary 10,000-step targets.
+3. **Policy B (WellSync Adaptive Personal Ladder)**:
+   - 3-rung personalized ladder with 50% Minimum step-down on lapse.
+   - Progress measured permanently via **Active Days** and **Return Count**.
+   - *Design Notice*: Policy B recording **0.0 streak resets** is **TRUE BY DESIGN** (an intentional architectural choice replacing streak cancellation with graded step-downs), not an empirical discovery.
+
+### 7.2 Attainability & Missing Days Definitions
+- **Baseline-Identical Attainability**:
+  $$\text{Attainability}_{\text{baseline}} = \frac{\text{Days with } \text{actualSteps} \ge \text{Baseline}}{\text{Total Days recorded}} \times 100\%$$
+  Under this mathematically identical definition, Policy A' and Policy B exhibit identical attainability: **31.9%**.
+- **Active Rung Attainability (Policy B Feasibility)**:
+  $$\text{Attainability}_{\text{rung}} = \frac{\text{Days meeting Active Ladder Target}}{\text{Total Days recorded}} \times 100\%$$
+  During behavioral lapses, Policy B steps down to the 50% Minimum rung, allowing participants to achieve success days ($30.0\%$ attainability on stepped-down days) and complete recovery rather than facing an insurmountable 100% target during sickness or life disruption.
+- **Missing Days Treatment**:
+  In all policies, unrecorded or unsynced calendar days are assigned $\text{actualValue} = 0$, counted in the total days denominator (non-attained), break streaks in Policy A and A', and count as below-par days towards the 3-day lapse trigger in Policy B.

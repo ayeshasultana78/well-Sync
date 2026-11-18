@@ -265,8 +265,9 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
 
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">{t('today.date_label', language)}</label>
+              <label htmlFor="todayDateInput" className="block text-xs font-semibold text-slate-700 mb-1">{t('today.date_label', language)}</label>
               <input
+                id="todayDateInput"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -277,13 +278,14 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
 
             {metric === 'steps' ? (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                <label htmlFor="todayStepsInput" className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
                   <span>{t('today.step_count_label', language)}</span>
                   <span className="text-[11px] text-slate-500 font-normal">
                     {t('today.current_rung', language)}: {currentTargetVal.toLocaleString()}
                   </span>
                 </label>
                 <input
+                  id="todayStepsInput"
                   type="number"
                   min="0"
                   max="100000"
@@ -305,7 +307,9 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex items-center gap-2">
                     <input
+                      id="todaySleepHoursInput"
                       type="number"
+                      aria-label={t('today.sleep_hours_label', language)}
                       min="0"
                       max="24"
                       value={sleepHoursInput}
@@ -313,11 +317,13 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                       className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                       disabled={isRestDeclared}
                     />
-                    <span className="text-xs text-slate-600 font-medium">{t('today.sleep_hours_label', language)}</span>
+                    <label htmlFor="todaySleepHoursInput" className="text-xs text-slate-600 font-medium">{t('today.sleep_hours_label', language)}</label>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
+                      id="todaySleepMinsInput"
                       type="number"
+                      aria-label={t('today.sleep_mins_label', language)}
                       min="0"
                       max="59"
                       step="5"
@@ -326,7 +332,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                       className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                       disabled={isRestDeclared}
                     />
-                    <span className="text-xs text-slate-600 font-medium">{t('today.sleep_mins_label', language)}</span>
+                    <label htmlFor="todaySleepMinsInput" className="text-xs text-slate-600 font-medium">{t('today.sleep_mins_label', language)}</label>
                   </div>
                 </div>
               </div>
@@ -346,10 +352,11 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label htmlFor="todayContextNoteInput" className="block text-xs font-semibold text-slate-700 mb-1">
                 {t('today.context_note_label', language)}
               </label>
               <input
+                id="todayContextNoteInput"
                 type="text"
                 maxLength={100}
                 placeholder={t('today.context_note_placeholder', language)}

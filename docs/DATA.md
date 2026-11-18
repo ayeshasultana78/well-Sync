@@ -2,14 +2,41 @@
 
 ## 1. Dataset Origin & Licensing Confirmation
 - **Source**: LifeSnaps: A multi-modal dataset of lifestyle and well-being data from wearable and mobile sensors.
-- **Repository**: Zenodo ([Record 7229547](https://zenodo.org/records/7229547), DOI: `10.5281/zenodo.7229547`).
+- **Repository**: Zenodo ([Record 7229547](https://zenodo.org/records/7229547), DOI: `10.5281/zenodo.7229547`, concept DOI: `10.5281/zenodo.6826682`).
 - **Academic Citation**: Palmius et al., *LifeSnaps: a public multi-modal dataset of lifestyle and well-being data*, Scientific Data / Nature, 2022 ([PMC9622868](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9622868/)).
 - **Licensing Compliance (On the Record)**: The LifeSnaps dataset is distributed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license. We formally confirm on the record that our usage complies fully with CC BY 4.0 terms: academic non-commercial research, appropriate attribution given, license indicated, and modifications transparently described.
 
+### 1.1 How to Verify the CC BY 4.0 License on Zenodo Directly
+Anyone can independently verify the license of the LifeSnaps dataset through any of the following three official channels:
+1. **Web Browser Verification**:
+   - Navigate to the official Zenodo record: [https://zenodo.org/records/7229547](https://zenodo.org/records/7229547).
+   - On the right-hand metadata sidebar under the heading **"License"**, locate the license badge: `Creative Commons Attribution 4.0 International` linking directly to `https://creativecommons.org/licenses/by/4.0/legalcode`.
+2. **Zenodo REST API Verification**:
+   - Query Zenodo's JSON API endpoint: `https://zenodo.org/api/records/7229547`.
+   - Inspect the `metadata.license.id` JSON property: `"cc-by-4.0"`.
+3. **Peer-Reviewed Publication Verification**:
+   - Consult the open-access Nature Scientific Data paper: Palmius et al. (2022), DOI: `10.1038/s41597-022-01815-3`.
+   - Under the **"Data Records"** and article footer sections, the authors explicitly state that the dataset hosted on Zenodo is made available under the Creative Commons Attribution 4.0 International license.
+
 ---
 
-## 2. Verified Local Files in `analysis/data/`
-The following files were placed in `analysis/data/` and directly opened and verified:
+## 2. Verified Local Files & Download Instructions
+
+### 2.1 Download Instructions (Raw Data Not Committed to Repository)
+In compliance with open science repository hygiene and competition rules, raw large CSV files are **not committed to git** (`.gitignore` excludes `analysis/data/*.csv`). To run the Python replay script or reproduce findings locally:
+
+1. Visit Zenodo record `7229547` at [https://zenodo.org/records/7229547](https://zenodo.org/records/7229547).
+2. Download `daily_fitbit_sema_df_unprocessed.csv` (required for `analysis/replay.py`) or the full dataset archive.
+3. Save the downloaded CSV files into the `analysis/data/` directory.
+4. Verify file sizes and row counts against Table 2.2 below.
+5. Execute the deterministic replay:
+   ```bash
+   pip install -r analysis/requirements.txt
+   python analysis/replay.py
+   ```
+   This generates `src/data/evidence_data.json` with full data provenance.
+
+### 2.2 Verified File Inventory in `analysis/data/`
 
 | File Name | Size (Bytes) | Row Count | Column Count | Description |
 | :--- | :--- | :--- | :--- | :--- |

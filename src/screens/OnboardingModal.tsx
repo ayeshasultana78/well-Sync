@@ -78,11 +78,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
         {/* Goal Setting Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
+            <label htmlFor="onboardingStepGoalInput" className="block text-xs sm:text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
               <Footprints className="w-4 h-4 text-emerald-600" />
               {t('settings.step_goal', language)} ({t('today.steps_unit', language)})
             </label>
             <input
+              id="onboardingStepGoalInput"
               type="number"
               min="1000"
               max="50000"
@@ -100,15 +101,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
+            <span className="block text-xs sm:text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
               <Moon className="w-4 h-4 text-indigo-600" />
               {t('settings.sleep_goal', language)}
-            </label>
+            </span>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="flex items-center gap-2">
                   <input
+                    id="onboardingSleepHoursInput"
                     type="number"
+                    aria-label={t('today.sleep_hours_label', language)}
                     min="3"
                     max="14"
                     value={sleepHours}
@@ -116,13 +119,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                     required
                   />
-                  <span className="text-xs text-slate-600 font-medium">{t('today.sleep_hours_label', language)}</span>
+                  <label htmlFor="onboardingSleepHoursInput" className="text-xs text-slate-600 font-medium">{t('today.sleep_hours_label', language)}</label>
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <input
+                    id="onboardingSleepMinsInput"
                     type="number"
+                    aria-label={t('today.sleep_mins_label', language)}
                     min="0"
                     max="59"
                     step="15"
@@ -131,7 +136,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ initialProfile
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                     required
                   />
-                  <span className="text-xs text-slate-600 font-medium">{t('today.sleep_mins_label', language)}</span>
+                  <label htmlFor="onboardingSleepMinsInput" className="text-xs text-slate-600 font-medium">{t('today.sleep_mins_label', language)}</label>
                 </div>
               </div>
             </div>

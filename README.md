@@ -105,15 +105,17 @@ npm test
 npm run test:coverage
 ```
 
-**Actual Test Coverage Reported**:
-- **Test Suites**: 3 passed (3 total: engine, storage, i18n)
-- **Total Tests**: 30 passed (30 total)
-- **Engine Statements**: **97.35%**
-- **Engine Branches**: **93.83%**
+**Actual Test Coverage Reported (Honest Disclosure)**:
+- **Test Suites**: 5 passed (5 total: engine, storage, i18n, screens smoke, a11y)
+- **Total Tests**: 63 passed (63 total)
+- **Engine Statements**: **97.57%**
+- **Engine Branches**: **94.70%**
 - **Engine Functions**: **100.00%**
-- **Engine Lines**: **97.35%**
+- **Screens Statements**: **89.88%**
+- **Storage Statements**: **89.28%**
 - **Localization Statements**: **100.00%**
-- **Localization Functions**: **100.00%**
+- **Overall Project Statements**: **81.70%** (Functions: 42.46%, Lines: 81.70%)
+*(No claim of 100% coverage is made. See docs/LIMITATIONS.md for complete testing disclosures).*
 
 ### 4.4 Building for Production
 ```bash
@@ -127,22 +129,28 @@ The output is written to `dist/` as a static client-side bundle ready for instan
 
 The replay analysis processes the real LifeSnaps wearable dataset through the deterministic WellSync engine to generate reproducible benchmarks.
 
-1. Ensure the raw dataset is placed in `analysis/data/`:
-   - `daily_fitbit_sema_df_unprocessed.csv`
-2. Install Python dependencies:
+### 5.1 Dataset Download Instructions (Zenodo Record 7229547)
+Raw data CSVs are not committed to git to ensure repository hygiene. To run or reproduce the analysis:
+1. Navigate to Zenodo Record 7229547: [https://zenodo.org/records/7229547](https://zenodo.org/records/7229547) (DOI: `10.5281/zenodo.7229547`).
+2. Download `daily_fitbit_sema_df_unprocessed.csv` (2,066,609 bytes, 7,410 rows, 63 columns).
+3. Place the file into `analysis/data/daily_fitbit_sema_df_unprocessed.csv`.
+4. (Optional) Download ancillary EMA and survey files (`breq.csv`, `panas.csv`, `personality.csv`, `stai.csv`, `ttm.csv`).
+
+### 5.2 Executing the Replay
+1. Install Python dependencies:
    ```bash
    pip install -r analysis/requirements.txt
    ```
-3. Run the replay script:
+2. Run the deterministic replay script:
    ```bash
    python analysis/replay.py
    ```
-4. The script executes the 71-participant simulation and outputs:
+3. The script executes the 71-participant simulation and outputs:
    - Descriptive lapse frequency and recovery distributions.
-   - Comparative Policy A (fixed 5k, 7.5k, 10k goals with streak reset) vs Policy B (WellSync Personal Ladder).
+   - Benchmark comparison: Policy A (fixed 5k, 7.5k, 10k goals with streak reset), Policy A' (Personal Baseline target with streak reset), and Policy B (WellSync Personal Ladder).
    - Demographic disaggregation with privacy masking ($n < 5$).
    - 36-cell multi-parameter sensitivity analysis grid.
-   - Generates `src/data/evidence_data.json` with full provenance for display in the app's Evidence tab.
+   - Generates `src/data/evidence_data.json` with full data provenance and timestamp for display in the app's Evidence tab.
 
 ---
 

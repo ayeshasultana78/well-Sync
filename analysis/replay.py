@@ -30,11 +30,16 @@ def simulate_participant(
     baseline_window: int = 28,
     min_valid_baseline: int = 14,
 ):
-    """Simulates a single participant through Policy A (fixed goals) and Policy B (WellSync Ladder)."""
-    # Policy A for 5000, 7500, 10000
-    policy_a = {}
+    """
+    Simulates a single participant through:
+    - Policy A: Fixed targets (5,000, 7,500, 10,000 steps) with streak reset to zero.
+    - Policy A': Personal baseline target with streak reset to zero on any missed/below-target day.
+    - Policy B: WellSync Adaptive Personal Ladder with 50% Minimum step-down and cumulative progress.
+    """
     total_days = len(g)
 
+    # 1. Policy A: Fixed targets (5k, 7.5k, 10k)
+    policy_a = {}
     for tgt in [5000, 7500, 10000]:
         streak = 0
         longest_streak = 0
@@ -60,14 +65,13 @@ def simulate_participant(
             "resets": resets,
             "longest_streak": longest_streak,
             "attainable_days": attainable_days,
-            "attainability_pct": (attainable_days / total_days) * 100
-            if total_days > 0
-            else 0,
+            "attainability_pct": (attainable_days / total_days) * 100 if total_days > 0 else 0,
             "days_below_baseline": days_below_own_baseline,
             "total_days": total_days,
         }
 
-    # Policy B: WellSync Ladder
+    # 2. Dynamic rolling baseline history simulation
+    # Used for both Policy A' (personal baseline + streak reset) and Policy B (WellSync ladder)
     history = []
     state = "ON_TRACK"
     ladder_level = "TARGET"
@@ -77,8 +81,14 @@ def simulate_participant(
     active_days = 0
     longest_ladder_streak = 0
     current_ladder_streak = 0
-    attainable_days_b = 0
+    attainable_days_b_rung = 0
     days_below_own_baseline_b = 0
+
+    # Policy A' variables (Personal baseline with reset-to-zero streak)
+    policy_a_prime_streak = 0
+    policy_a_prime_longest = 0
+    policy_a_prime_resets = 0
+    policy_a_prime_attained_days = 0
 
     lapse_events = []
     recovery_times = []
@@ -104,6 +114,19 @@ def simulate_participant(
         else:
             baseline = overall_median
 
+        # Policy A' evaluation on this day:
+        # Target is participant's personal baseline. If steps >= baseline, streak continues; else resets to 0.
+        if (not is_missing) and (val >= baseline):
+            policy_a_prime_streak += 1
+            policy_a_prime_attained_days += 1
+            if policy_a_prime_streak > policy_a_prime_longest:
+                policy_a_prime_longest = policy_a_prime_streak
+        else:
+            if policy_a_prime_streak > 0:
+                policy_a_prime_resets += 1
+            policy_a_prime_streak = 0
+
+        # Policy B ladder targets
         min_target = baseline * 0.50
         tgt_target = baseline
         stretch_target = baseline * 1.10
@@ -118,7 +141,7 @@ def simulate_participant(
         if val < baseline:
             days_below_own_baseline_b += 1
 
-        # Success day: meets active rung target
+        # Success day for Policy B: meets active rung target
         is_success_day = (not is_missing) and (val >= active_target)
 
         # Below-par day: on Target or Stretch, < 60% of baseline or missing
@@ -131,7 +154,7 @@ def simulate_participant(
         is_calibrating = total_valid_days < 7
 
         if is_success_day:
-            attainable_days_b += 1
+            attainable_days_b_rung += 1
             active_days += 1
             current_ladder_streak += 1
             if current_ladder_streak > longest_ladder_streak:
@@ -208,14 +231,23 @@ def simulate_participant(
             }
         )
 
+    policy_a_prime = {
+        "resets": policy_a_prime_resets,
+        "longest_streak": policy_a_prime_longest,
+        "attainable_days": policy_a_prime_attained_days,
+        "attainability_pct": (policy_a_prime_attained_days / total_days) * 100 if total_days > 0 else 0,
+        "days_below_baseline": days_below_own_baseline_b,
+        "total_days": total_days,
+    }
+
     policy_b = {
-        "resets": 0,  # Streak reset to zero is eliminated in Policy B
+        "resets": 0,  # Zero resets is true BY DESIGN (architectural choice: cumulative progress + step-down)
         "longest_streak": longest_ladder_streak,
         "active_days": active_days,
-        "attainable_days": attainable_days_b,
-        "attainability_pct": (attainable_days_b / total_days) * 100
-        if total_days > 0
-        else 0,
+        "baseline_attainable_days": policy_a_prime_attained_days,
+        "baseline_attainability_pct": (policy_a_prime_attained_days / total_days) * 100 if total_days > 0 else 0,
+        "rung_attainable_days": attainable_days_b_rung,
+        "rung_attainability_pct": (attainable_days_b_rung / total_days) * 100 if total_days > 0 else 0,
         "days_below_baseline": days_below_own_baseline_b,
         "return_count": return_count,
         "total_days": total_days,
@@ -223,7 +255,7 @@ def simulate_participant(
         "recovery_times": recovery_times,
     }
 
-    return policy_a, policy_b
+    return policy_a, policy_a_prime, policy_b
 
 
 def run_full_analysis():
@@ -270,16 +302,18 @@ def run_full_analysis():
 
     print(f"Loaded {len(participants)} valid participants.")
 
-    # 1. Main Replay: Policy A vs Policy B
+    # 1. Main Replay: Policy A vs Policy A' vs Policy B
     all_res_a = {5000: [], 7500: [], 10000: []}
+    all_res_a_prime = []
     all_res_b = []
     all_recovery_times = []
     all_lapse_counts = []
 
     for p in participants:
-        res_a, res_b = simulate_participant(p["group"], p["overall_median"])
+        res_a, res_a_prime, res_b = simulate_participant(p["group"], p["overall_median"])
         for tgt in [5000, 7500, 10000]:
             all_res_a[tgt].append({**res_a[tgt], "gender": p["gender"], "age": p["age"]})
+        all_res_a_prime.append({**res_a_prime, "gender": p["gender"], "age": p["age"]})
         all_res_b.append(
             {
                 **res_b,
@@ -297,25 +331,53 @@ def run_full_analysis():
         df_a = pd.DataFrame(all_res_a[tgt])
         comparison_table.append(
             {
-                "policy": f"Policy A (Fixed {tgt:,} steps)",
+                "policy_id": f"A_{tgt}",
+                "policy_name": f"Policy A (Fixed {tgt:,} steps)",
+                "target_type": "Fixed Static Goal",
+                "streak_mechanic": "Reset to 0 on any missed/below-target day",
                 "mean_resets": round(float(df_a["resets"].mean()), 1),
                 "median_resets": round(float(df_a["resets"].median()), 1),
                 "longest_streak_mean": round(float(df_a["longest_streak"].mean()), 1),
                 "longest_streak_median": round(float(df_a["longest_streak"].median()), 1),
                 "attainability_pct": round(float(df_a["attainability_pct"].mean()), 1),
+                "attainability_definition": f"Days steps >= {tgt:,} / Total Calendar Days (missing days count as 0)",
                 "days_below_baseline_mean": round(float(df_a["days_below_baseline"].mean()), 1),
             }
         )
 
+    # Policy A' (Personal Baseline Target + Reset to Zero)
+    df_a_prime = pd.DataFrame(all_res_a_prime)
+    comparison_table.append(
+        {
+            "policy_id": "A_PRIME",
+            "policy_name": "Policy A' (Personal Baseline + Streak Reset)",
+            "target_type": "Personal Rolling Baseline (28-day median)",
+            "streak_mechanic": "Reset to 0 on any missed/below-target day",
+            "mean_resets": round(float(df_a_prime["resets"].mean()), 1),
+            "median_resets": round(float(df_a_prime["resets"].median()), 1),
+            "longest_streak_mean": round(float(df_a_prime["longest_streak"].mean()), 1),
+            "longest_streak_median": round(float(df_a_prime["longest_streak"].median()), 1),
+            "attainability_pct": round(float(df_a_prime["attainability_pct"].mean()), 1),
+            "attainability_definition": "Days steps >= Personal Baseline / Total Calendar Days (identical to Policy B baseline definition)",
+            "days_below_baseline_mean": round(float(df_a_prime["days_below_baseline"].mean()), 1),
+        }
+    )
+
+    # Policy B (WellSync Adaptive Personal Ladder)
     df_b = pd.DataFrame(all_res_b)
     comparison_table.append(
         {
-            "policy": "Policy B (WellSync Personal Ladder)",
-            "mean_resets": round(float(df_b["resets"].mean()), 1),  # 0.0
-            "median_resets": round(float(df_b["resets"].median()), 1),
+            "policy_id": "B_LADDER",
+            "policy_name": "Policy B (WellSync Adaptive Personal Ladder)",
+            "target_type": "Personal Rolling Baseline (with 50% Minimum step-down upon lapse)",
+            "streak_mechanic": "No streak resets (TRUE BY DESIGN: tracks cumulative Active Days & Return Count)",
+            "mean_resets": 0.0,
+            "median_resets": 0.0,
             "longest_streak_mean": round(float(df_b["longest_streak"].mean()), 1),
             "longest_streak_median": round(float(df_b["longest_streak"].median()), 1),
-            "attainability_pct": round(float(df_b["attainability_pct"].mean()), 1),
+            "attainability_pct": round(float(df_b["rung_attainability_pct"].mean()), 1),
+            "baseline_attainability_pct": round(float(df_b["baseline_attainability_pct"].mean()), 1),
+            "attainability_definition": "Rung attainability: Days meeting active prescribed rung / Total Calendar Days. Baseline attainability: Identical to Policy A' (steps >= baseline / total days).",
             "days_below_baseline_mean": round(float(df_b["days_below_baseline"].mean()), 1),
             "mean_return_count": round(float(df_b["return_count"].mean()), 1),
             "mean_active_days": round(float(df_b["active_days"].mean()), 1),
@@ -341,6 +403,7 @@ def run_full_analysis():
         "max_recovery_days": int(np.max(all_recovery_times))
         if all_recovery_times
         else None,
+        "missing_days_handling": "Calendar gaps and unrecorded days are treated as missing (value = 0), which count as below-par days and contribute to lapse triggers."
     }
 
     # 3. Demographic Subgroups (Masking cells with n < 5)
@@ -361,13 +424,16 @@ def run_full_analysis():
                 sub_a_10k = pd.DataFrame(
                     [r for r in all_res_a[10000] if r[group_col] == val]
                 )
+                sub_a_prime = pd.DataFrame(
+                    [r for r in all_res_a_prime if r[group_col] == val]
+                )
                 records.append(
                     {
                         "subgroup": str(val),
                         "participant_count": count,
                         "masked": False,
                         "policy_b_attainability_pct": round(
-                            float(sub["attainability_pct"].mean()), 1
+                            float(sub["rung_attainability_pct"].mean()), 1
                         ),
                         "policy_b_longest_streak": round(
                             float(sub["longest_streak"].mean()), 1
@@ -378,11 +444,11 @@ def run_full_analysis():
                         "policy_b_mean_lapses": round(
                             float(sub["lapses_count"].mean()), 1
                         ),
+                        "policy_a_prime_resets": round(
+                            float(sub_a_prime["resets"].mean()), 1
+                        ),
                         "policy_a_10k_resets": round(
                             float(sub_a_10k["resets"].mean()), 1
-                        ),
-                        "policy_a_10k_attainability_pct": round(
-                            float(sub_a_10k["attainability_pct"].mean()), 1
                         ),
                     }
                 )
@@ -392,9 +458,6 @@ def run_full_analysis():
     age_breakdown = compute_subgroup("age")
 
     # 4. Sensitivity Analysis Grid
-    # Lapse length: 2 to 5 days
-    # Threshold: 50% to 70% (0.50, 0.60, 0.70)
-    # Baseline window: 14 to 42 days (14, 28, 42)
     sensitivity_grid = []
     print("Running sensitivity grid analysis...")
     for lapse_len in [2, 3, 4, 5]:
@@ -405,7 +468,7 @@ def run_full_analysis():
                 attain_sample = []
 
                 for p in participants:
-                    _, sim_b = simulate_participant(
+                    _, _, sim_b = simulate_participant(
                         p["group"],
                         p["overall_median"],
                         lapse_threshold_pct=thresh,
@@ -414,7 +477,7 @@ def run_full_analysis():
                         min_valid_baseline=min(14, window // 2),
                     )
                     lapses_sample.append(sim_b["lapses_count"])
-                    attain_sample.append(sim_b["attainability_pct"])
+                    attain_sample.append(sim_b["rung_attainability_pct"])
                     recov_sample.extend(sim_b["recovery_times"])
 
                 sensitivity_grid.append(
@@ -432,6 +495,9 @@ def run_full_analysis():
                         "mean_recovery_days": round(float(np.mean(recov_sample)), 1)
                         if recov_sample
                         else None,
+                        "median_recovery_days": round(float(np.median(recov_sample)), 1)
+                        if recov_sample
+                        else None,
                     }
                 )
 
@@ -444,9 +510,10 @@ def run_full_analysis():
             "total_source_rows": len(df),
             "total_participants": len(participants),
             "run_date_utc": run_date,
-            "script_version": "1.0.0",
-            "citation": "LifeSnaps Dataset (Zenodo 7229547, CC BY 4.0, PMC9622868)",
+            "script_version": "1.1.0",
+            "citation": "LifeSnaps Dataset (Zenodo 7229547, DOI 10.5281/zenodo.7229547, CC BY 4.0, PMC9622868)",
             "demographic_notice": "Cohort is a non-Abu Dhabi sample; replay reflects rule execution against recorded sensor data and does not prove behaviour change.",
+            "design_distinction_notice": "Policy B's 0.0 streak resets is true BY DESIGN (architectural choice: replacing streak resets with graded step-down), not an empirical discovery."
         },
         "descriptive_recovery": recovery_stats,
         "policy_comparison": comparison_table,
@@ -470,6 +537,7 @@ def run_full_analysis():
 
     print(f"Successfully generated evidence output at: {output_path}")
     print(f"Total participants: {len(participants)}")
+    print(f"Policy A' (Personal Baseline + Streak Reset): Mean Resets = {df_a_prime['resets'].mean():.1f}, Attainability = {df_a_prime['attainability_pct'].mean():.1f}%")
     print(f"Total lapses detected: {recovery_stats['total_lapses_detected']}")
     print(
         f"Mean recovery time: {recovery_stats['mean_recovery_days']} days (median: {recovery_stats['median_recovery_days']})"

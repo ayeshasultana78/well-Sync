@@ -105,13 +105,15 @@ npm test
 npm run test:coverage
 ```
 
-**Actual Engine Test Coverage Reported**:
-- **Test Suites**: 2 passed (2 total)
-- **Total Tests**: 24 passed (24 total)
+**Actual Test Coverage Reported**:
+- **Test Suites**: 3 passed (3 total: engine, storage, i18n)
+- **Total Tests**: 30 passed (30 total)
 - **Engine Statements**: **97.35%**
 - **Engine Branches**: **93.83%**
 - **Engine Functions**: **100.00%**
 - **Engine Lines**: **97.35%**
+- **Localization Statements**: **100.00%**
+- **Localization Functions**: **100.00%**
 
 ### 4.4 Building for Production
 ```bash

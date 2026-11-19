@@ -328,6 +328,10 @@ describe('Screens Smoke Tests', () => {
       expect(html).toContain('About WellSync');
       expect(html).toContain('Challenge 09: Sustaining Healthy Behaviors');
       expect(html).toContain('Student Prototype Declaration');
+      expect(html).toContain('Ayesha Sultana');
+      expect(html).toContain('B. Alence');
+      expect(html).toContain('Student prototype, not affiliated with any commercial product named WellSync');
+      expect(html).toContain('Sofia Yfantidou');
     });
 
     it('renders about screen in Arabic', () => {

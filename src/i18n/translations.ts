@@ -144,8 +144,16 @@ export const translations: Record<string, { en: string; ar: string }> = {
   'about.challenge_badge': { en: 'Future Health Digital Innovation Challenge 2026', ar: 'تحدي الابتكار الصحي الرقمي 2026' },
   'about.challenge_title': { en: 'Challenge 09: Sustaining Healthy Behaviors (Abu Dhabi)', ar: 'التحدي 09: استدامة السلوكيات الصحية (أبوظبي)' },
   'about.student_disclaimer': {
-    en: 'Student Prototype Declaration: Developed by two undergraduate students with no clinical partner, zero clinical testing, and zero commercial backing. Not a medical device.',
-    ar: 'إقرار النموذج الأولي للطلاب: تم تطوير هذا النموذج من قبل طالبين جامعيين دون شريك سريري، وبدون اختبارات سريرية، ودون أي دعم تجاري. النظام ليس جهازاً طبياً.'
+    en: 'Student Prototype Declaration: Developed by undergraduate students Ayesha Sultana and B. Alence with no clinical partner, zero clinical testing, and zero commercial backing. Student prototype, not affiliated with any commercial product named WellSync. Not a medical device.',
+    ar: 'إقرار النموذج الأولي للطلاب: تم تطوير هذا النموذج من قبل الطالبين الجامعيين عائشة سلطانة وب. ألينس دون شريك سريري، وبدون اختبارات سريرية، ودون أي دعم تجاري. نموذج أولي للطلاب، وليس له أي صلة بأي منتج تجاري يحمل اسم WellSync. النظام ليس جهازاً طبياً.'
+  },
+  'about.authors': {
+    en: 'Authors: Ayesha Sultana & B. Alence (Undergraduate Students)',
+    ar: 'المؤلفون: عائشة سلطانة وب. ألينس (طالبان جامعيان)'
+  },
+  'about.commercial_disclaimer': {
+    en: 'Student prototype, not affiliated with any commercial product named WellSync.',
+    ar: 'نموذج أولي للطلاب، وليس له أي صلة بأي منتج تجاري يحمل اسم WellSync.'
   },
   'about.rules_title': { en: 'Rule-Based Engine Architecture', ar: 'بنية المحرك القائم على القواعد' },
   'about.rules_desc': {

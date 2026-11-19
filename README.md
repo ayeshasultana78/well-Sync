@@ -2,8 +2,9 @@
 
 > **Competition Prototype**: Future Health Digital Innovation Challenge 2026 (Abu Dhabi)  
 > **Track**: Challenge 09 — Sustaining Healthy Behaviors  
-> **Team Status**: Two undergraduate students (No clinical partner, zero human user testing)  
+> **Authors**: Ayesha Sultana & B. Alence (Undergraduate Students, no clinical partner, zero human user testing)  
 > **Submission Deadline**: Friday 20 November 2026  
+> **Notice**: Student prototype, not affiliated with any commercial product named WellSync ([wellsync](https://dev-wp.wellsync.com/)).  
 
 ---
 

@@ -38,6 +38,7 @@ interface PolicyComparisonItem {
   longest_streak_median: number;
   attainability_pct: number;
   baseline_attainability_pct?: number;
+  rung_attainability_pct?: number;
   attainability_definition?: string;
   days_below_baseline_mean: number;
   mean_return_count?: number;
@@ -345,7 +346,8 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ language = 'en' 
                       <th className="py-3 px-3">{language === 'ar' ? 'آلية التتابع' : 'Streak Rule'}</th>
                       <th className="py-3 px-3">{language === 'ar' ? 'متوسط مرات التصفير' : 'Mean Resets'}</th>
                       <th className="py-3 px-3">{language === 'ar' ? 'أطول تتابع' : 'Longest Streak'}</th>
-                      <th className="py-3 px-3">{language === 'ar' ? 'نسبة التحقيق %' : 'Attainability %'}</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'تحقيق خط الأساس / الهدف %' : 'Baseline/Goal Attainment %'}</th>
+                      <th className="py-3 px-3">{language === 'ar' ? 'واقعية هدف التعافي (عند التراجع) %' : 'Recovery Rung Feasibility %'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -382,10 +384,28 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ language = 'en' 
                           </td>
                           <td className="py-3 px-3">{item.longest_streak_mean} {language === 'ar' ? 'أيام' : 'days'}</td>
                           <td className="py-3 px-3">
-                            <strong>{item.attainability_pct}%</strong>
-                            {isPolicyB && (
-                              <span className="block text-[10px] text-slate-500 font-normal">
-                                {language === 'ar' ? `(أساس متطابق: ${item.baseline_attainability_pct}%)` : `(Baseline identical: ${item.baseline_attainability_pct}%)`}
+                            <strong className={isPolicyB ? 'text-emerald-800' : isPolicyAPrime ? 'text-amber-800' : 'text-slate-900'}>
+                              {item.attainability_pct}%
+                            </strong>
+                            <span className="block text-[10px] text-slate-500 font-normal">
+                              {isPolicyB
+                                ? (language === 'ar' ? 'مطابق للسياسة أ\' (الخطوات >= الأساس)' : 'Identical to Policy A\' (Steps >= Baseline)')
+                                : (language === 'ar' ? 'تحقيق الهدف / الأيام الإجمالية' : 'Met target / total calendar days')}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            {isPolicyB ? (
+                              <div>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                  {item.rung_attainability_pct ?? 30.0}%
+                                </span>
+                                <span className="block text-[10px] text-emerald-700 font-normal mt-0.5">
+                                  {language === 'ar' ? 'على درجات التعافي المخفضة (50%)' : 'On stepped-down recovery days (50%)'}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-[11px]">
+                                {language === 'ar' ? '— (لا يوجد سلم للتعافي)' : '— (No recovery step-down)'}
                               </span>
                             )}
                           </td>
@@ -402,6 +422,12 @@ export const EvidenceScreen: React.FC<EvidenceScreenProps> = ({ language = 'en' 
                   {language === 'ar'
                     ? 'في السياسة أ\'، عندما خصصنا الهدف ليعادل خط الأساس الشخصي لكل مشارك بدقة، ظل المشاركون يواجهون متوسط 15.3 انهياراً لسلاسل التتابع لأن أي يوم إجازة أو مرض أو عدم مزامنة يصفر التقدم كلياً. هذا يثبت أن المشكلة الجوهرية ليست فقط في تحديد أهداف غير واقعية، بل في آلية "التصفير للصفر" العقابية ذاتها.'
                     : 'In Policy A\', even when targets perfectly matched each participant\'s own personal baseline, participants still suffered an average of 15.3 streak resets to zero because any single illness, travel day, or sensor gap destroyed their accumulated record. This proves that the core driver of habit abandonment is the reset-to-zero streak mechanic itself, not just goal difficulty.'}
+                </p>
+                <p className="text-[11px] text-amber-900 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                  <strong>{language === 'ar' ? 'تنبيه عدم المقارنة المباشرة بين المقاييس:' : 'Metric Non-Comparability Notice:'}</strong>{' '}
+                  {language === 'ar'
+                    ? 'نسبة واقعية هدف التعافي للسياسة ب (30.0%) ونسبة تحقيق الهدف الثابت للسياسة أ (22.3% لـ 10,000 خطوة) مقياسان مختلفان بنيوياً ولا يصح وضعهما جنباً إلى جنب كأرقام متكافئة. المقياس المتكافئ رياضياً هو نسبة تحقيق خط الأساس الشخصي، وهو متطابق تماماً بين السياسة أ\' والسياسة ب بنسبة 31.9%. تكمن ميزة السياسة ب الحصرية في تفعيل درجة التعافي (50%) لتتيح للمتعثرين فرصة إنجاز واستعادة العادة دون تصفير.'
+                    : 'Policy B\'s 30.0% recovery rung feasibility and Policy A\'s 22.3% fixed goal attainment are structurally different constructs and are NOT mathematically comparable. The only directly comparable metric across policies is baseline attainment: when held to an identical standard (steps >= baseline), Policy A\' and Policy B both achieve exactly 31.9%. Policy B\'s unique behavioral advantage is offering a manageable 50% Minimum rung during lapses to re-establish momentum rather than collapsing streaks to zero.'}
                 </p>
                 <p className="text-[11px] text-slate-500">
                   <em>{language === 'ar' ? 'توضيح الشفافية:' : 'Transparency Note:'}</em>{' '}

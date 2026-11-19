@@ -41,12 +41,32 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ language }) => {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Scale className="w-4 h-4 text-indigo-600" />
-          {language === 'ar' ? 'شفافية الفريق ونطاق العمل' : 'Team Status & Scope Transparency'}
+          {language === 'ar' ? 'إقرار النموذج الأولي للطلاب: شفافية الفريق ونطاق العمل' : 'Student Prototype Declaration: Team Status & Scope Transparency'}
         </h2>
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700 space-y-2">
           <p>
-            <strong>{language === 'ar' ? 'الفريق:' : 'Team:'}</strong> {t('about.student_disclaimer', language)}
+            <strong>{language === 'ar' ? 'فريق العمل:' : 'Student Authors:'}</strong>{' '}
+            1. Ayesha Sultana, 2. B. Alence ({language === 'ar' ? 'طالبان جامعيان' : 'Undergraduate Students'})
           </p>
+          <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-900 text-xs font-semibold">
+            {language === 'ar' ? (
+              <span>
+                تنويه: نموذج أولي للطلاب، وليس له أي صلة بأي منتج تجاري يحمل اسم WellSync (
+                <a href="https://dev-wp.wellsync.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-950">
+                  wellsync
+                </a>
+                ).
+              </span>
+            ) : (
+              <span>
+                Notice: Student prototype, not affiliated with any commercial product named WellSync (
+                <a href="https://dev-wp.wellsync.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-950">
+                  wellsync
+                </a>
+                ).
+              </span>
+            )}
+          </div>
           <p>
             <strong>{language === 'ar' ? 'الوضع السريري:' : 'Clinical Status:'}</strong>{' '}
             {language === 'ar'
@@ -94,13 +114,24 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ language }) => {
             <h3 className="font-bold text-slate-900 text-sm">{t('about.lifesnaps_title', language)}</h3>
             <p className="text-slate-600 leading-relaxed">
               {language === 'ar'
-                ? 'يستخدم تقييم إعادة المحاكاة بيانات LifeSnaps المفتوحة للباحثين (Zenodo 7229547).'
-                : 'Our offline replay evaluation uses the open-access LifeSnaps dataset (Sofia Yfantidou et al., Nature Scientific Data, 2022).'}
+                ? 'تعتمد إعادة المحاكاة على بيانات دراسة LifeSnaps المنشورة في مجلة Scientific Data:'
+                : 'Our offline replay evaluation uses the published LifeSnaps dataset from Nature Scientific Data:'}
             </p>
-            <ul className="list-disc list-inside text-slate-600 space-y-0.5">
-              <li><strong>Zenodo Record:</strong> 7229547 (DOI: 10.5281/zenodo.7229547)</li>
+            <div className="text-[11px] text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 space-y-1">
+              <p className="font-medium text-slate-900">
+                Sofia Yfantidou, Christina Karagianni, Stefanos Efstathiou, Athena Vakali, Joao Palotti, Dimitrios Panteleimon Giakatos, Thomas Marchioro, Andrei Kazlouski, Elena Ferrari, and Šarūnas Girdzijauskas.
+              </p>
+              <p className="italic text-slate-600">
+                "LifeSnaps, a 4-month multi-modal dataset capturing unobtrusive snapshots of our lives in the wild."
+              </p>
+              <p className="text-slate-500 font-mono text-[10px]">
+                Scientific Data 9, 663 (2022). DOI: 10.1038/s41597-022-01764-x | PMCID: PMC9622868
+              </p>
+            </div>
+            <ul className="list-disc list-inside text-slate-600 space-y-0.5 pt-1">
+              <li><strong>Zenodo Repository:</strong> Record 7229547 (DOI: 10.5281/zenodo.7229547)</li>
               <li><strong>License:</strong> Creative Commons Attribution 4.0 International (CC BY 4.0)</li>
-              <li><strong>Demographic Notice:</strong> {t('evidence.disclaimer_2', language)}</li>
+              <li><strong>Demographic Scope:</strong> {t('evidence.disclaimer_2', language)}</li>
             </ul>
           </div>
         </div>
